@@ -1,5 +1,6 @@
 language: scala
 scala:
    - 2.11.11
+script: sbt test
 # uncomment and edit the following line if your project needs to run something other than `rake`:
 # script: bundle exec rspec spec
