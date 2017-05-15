@@ -7,9 +7,14 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.11"
 
+resolvers += Resolver.jcenterRepo
+
 libraryDependencies += filters
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % "2.5.1"
 libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "4.1.0"
+libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.1.0"
+
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.1" % Test
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
 
 // Adds additional packages into Twirl
