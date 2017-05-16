@@ -22,7 +22,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
     val registerEmployee = RegisterEmployee(firstName, lastName)
 
     employeeActor ! registerEmployee
-    expectMsg(new Employee(email).register(firstName, lastName))
+    expectMsg(EventAppliedSuccessfully())
     employeeActor
   }
 
@@ -30,7 +30,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
     val actor = givenActorWithRegisteredEmployee(email, firstName, lastName)
     val creditLeaves = CreditLeaves(creditedLeaves)
     actor ! creditLeaves
-    expectMsg(new Employee(email).register(firstName, lastName).creditLeaves(creditedLeaves).right.get)
+    expectMsg(EventAppliedSuccessfully())
     actor
   }
 
@@ -46,7 +46,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       employeeActor ! registerEmployee
 
-      expectMsg(new Employee(email).register(firstName, lastName))
+      expectMsg(EventAppliedSuccessfully())
 
       employeeActor ! PoisonPill
 
@@ -64,7 +64,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       val registerEmployee = RegisterEmployee(firstName, lastName)
       employeeActor ! registerEmployee
-      expectMsg(new Employee(email).register(firstName, lastName))
+      expectMsg(EventAppliedSuccessfully())
 
       employeeActor ! registerEmployee
       expectMsg(DomainError(s"Employee with email $email is already registered."))
@@ -95,7 +95,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       val creditLeaves = CreditLeaves(11.5f)
       actor ! creditLeaves
-      expectMsg(new Employee(email).register(firstName, lastName).creditLeaves(11.5f).right.get)
+      expectMsg(EventAppliedSuccessfully())
 
       actor ! PoisonPill
 
@@ -116,10 +116,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
 
       actor ! applyFullDayLeaves
-      expectMsg(new Employee(email)
-        .register(firstName, lastName)
-        .creditLeaves(creditedLeaves).right.get
-        .applyFullDayLeaves(from, to).right.get)
+      expectMsg(EventAppliedSuccessfully())
 
       actor ! PoisonPill
 
@@ -143,7 +140,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
 
       actor ! applyFullDayLeaves
-      expectMsg(Status.Failure)
+      expectMsg(DomainError("Insufficient leave balance"))
 
       actor ! PoisonPill
 
@@ -166,10 +163,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
 
       actor ! applyHalfDayLeaves
-      expectMsg(new Employee(email)
-        .register(firstName, lastName)
-        .creditLeaves(creditedLeaves).right.get
-        .applyHalfDayLeaves(from, to).right.get)
+      expectMsg(EventAppliedSuccessfully())
 
       actor ! PoisonPill
 
@@ -193,7 +187,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
 
       actor ! applyHalfDayLeaves
-      expectMsg(Status.Failure)
+      expectMsg(DomainError("Insufficient leave balance"))
 
       actor ! PoisonPill
 

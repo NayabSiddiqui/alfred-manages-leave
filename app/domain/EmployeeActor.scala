@@ -7,6 +7,7 @@ import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEm
 import event._
 
 case class DomainError(message: String)
+case class EventAppliedSuccessfully()
 
 class EmployeeActor(email: String) extends PersistentActor {
 
@@ -18,8 +19,8 @@ class EmployeeActor(email: String) extends PersistentActor {
     case RegisterEmployee(firstName, lastName) => {
       persist(EmployeeRegistered(firstName, lastName)) { event =>
         applyEvent(event) match {
-          case Left(reason) => sender ! Status.Failure
-          case Right(updatedEmployee) => sender ! updatedEmployee
+          case Left(reason) => sender ! DomainError(reason)
+          case Right(success) => sender ! success
         }
       }
     }
@@ -31,8 +32,8 @@ class EmployeeActor(email: String) extends PersistentActor {
     case CreditLeaves(creditedLeaves) => {
       persist(LeavesCredited(creditedLeaves)) { event => {
         applyEvent(event) match {
-          case Left(reason) => sender ! Status.Failure
-          case Right(updatedEmployee) => sender ! updatedEmployee
+          case Left(reason) => sender ! DomainError(reason)
+          case Right(success) => sender ! success
         }
       }
       }
@@ -40,10 +41,10 @@ class EmployeeActor(email: String) extends PersistentActor {
     case ApplyFullDayLeaves(from, to) => {
       val event: FullDayLeavesApplied = FullDayLeavesApplied(from, to)
       applyEvent(event) match {
-        case Left(reason) => sender ! Status.Failure
-        case Right(updatedEmployee) => {
+        case Left(reason) => sender ! DomainError(reason)
+        case Right(success) => {
           persist(event) { event =>
-            sender ! updatedEmployee
+            sender ! success
           }
         }
       }
@@ -51,10 +52,10 @@ class EmployeeActor(email: String) extends PersistentActor {
     case ApplyHalfDayLeaves(from, to) => {
       val event: HalfDayLeavesApplied = HalfDayLeavesApplied(from, to)
       applyEvent(event) match {
-        case Left(reason) => sender ! Status.Failure
-        case Right(updatedEmployee) => {
+        case Left(reason) => sender ! DomainError(reason)
+        case Right(success) => {
           persist(event) { event =>
-            sender ! updatedEmployee
+            sender ! success
           }
         }
       }
@@ -70,19 +71,19 @@ class EmployeeActor(email: String) extends PersistentActor {
     case event: EmployeeEvent => applyEvent(event)
   }
 
-  def applyEvent(event: EmployeeEvent): Either[String, Employee] = {
+  def applyEvent(event: EmployeeEvent): Either[String, EventAppliedSuccessfully] = {
     event match {
       case EmployeeRegistered(firstName, lastName) => {
         employee = employee.register(firstName, lastName)
         context become registered
-        Right(employee)
+        Right(EventAppliedSuccessfully())
       }
       case LeavesCredited(creditedLeaves) => {
         employee.creditLeaves(creditedLeaves) match {
           case Left(reason) => Left(reason)
           case Right(updatedEmployee) => {
             employee = updatedEmployee
-            Right(employee)
+            Right(EventAppliedSuccessfully())
           }
         }
       }
@@ -91,7 +92,7 @@ class EmployeeActor(email: String) extends PersistentActor {
           case Left(reason) => Left(reason)
           case Right(updatedEmployee) => {
             employee = updatedEmployee
-            Right(employee)
+            Right(EventAppliedSuccessfully())
           }
         }
       }
@@ -100,7 +101,7 @@ class EmployeeActor(email: String) extends PersistentActor {
           case Left(reason) => Left(reason)
           case Right(updatedEmployee) => {
             employee = updatedEmployee
-            Right(employee)
+            Right(EventAppliedSuccessfully())
           }
         }
       }
