@@ -55,6 +55,38 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       expectMsg(new Employee(email).register(firstName, lastName))
     }
 
+    "should not allow registration of the same employee again" in {
+      val email = "batman1@dccomics.com"
+      val firstName = "Bruce"
+      val lastName = "Wayne"
+
+      val employeeActor = system.actorOf(EmployeeActor.props(email))
+
+      val registerEmployee = RegisterEmployee(firstName, lastName)
+      employeeActor ! registerEmployee
+      expectMsg(new Employee(email).register(firstName, lastName))
+
+      employeeActor ! registerEmployee
+      expectMsg(DomainError(s"Employee with email $email is already registered."))
+    }
+
+    "should not handle any command before the employee has been registered" in {
+      val email = "batman2@dccomics.com"
+      val firstName = "Bruce"
+      val lastName = "Wayne"
+
+      val actor = system.actorOf(EmployeeActor.props(email))
+
+      actor ! CreditLeaves(11.5f)
+      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Empoyee"))
+
+      actor ! ApplyFullDayLeaves(new DateTime(), new DateTime().plusDays(3))
+      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Empoyee"))
+
+      actor ! ApplyHalfDayLeaves(new DateTime(), new DateTime().plusDays(3))
+      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Empoyee"))
+    }
+
     "handle CreditLeaves command" in {
       val email = "ironman2@marvel.com"
       val firstName = "Tony"
@@ -173,6 +205,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
     }
   }
 }
+
+
 
 
 

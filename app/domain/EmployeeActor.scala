@@ -6,13 +6,15 @@ import akka.persistence.PersistentActor
 import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
 import event._
 
+case class DomainError(message: String)
+
 class EmployeeActor(email: String) extends PersistentActor {
 
   var employee = new Employee(email)
 
   override def persistenceId: String = s"order-$email"
 
-  override def receiveCommand: Receive = {
+  def unregistered: Receive = {
     case RegisterEmployee(firstName, lastName) => {
       persist(EmployeeRegistered(firstName, lastName)) { event =>
         applyEvent(event) match {
@@ -21,6 +23,11 @@ class EmployeeActor(email: String) extends PersistentActor {
         }
       }
     }
+    case _ => sender ! DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Empoyee")
+  }
+
+  def registered: Receive = {
+    case RegisterEmployee(firstName, lastName) => sender ! DomainError(s"Employee with email $email is already registered.")
     case CreditLeaves(creditedLeaves) => {
       persist(LeavesCredited(creditedLeaves)) { event => {
         applyEvent(event) match {
@@ -57,6 +64,8 @@ class EmployeeActor(email: String) extends PersistentActor {
     case "getEmployee" => sender ! employee
   }
 
+  override def receiveCommand: Receive = unregistered
+
   override def receiveRecover: Receive = {
     case event: EmployeeEvent => applyEvent(event)
   }
@@ -65,6 +74,7 @@ class EmployeeActor(email: String) extends PersistentActor {
     event match {
       case EmployeeRegistered(firstName, lastName) => {
         employee = employee.register(firstName, lastName)
+        context become registered
         Right(employee)
       }
       case LeavesCredited(creditedLeaves) => {
