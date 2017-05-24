@@ -7,13 +7,14 @@ import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEm
 import event._
 
 case class DomainError(message: String)
+
 case class EventAppliedSuccessfully()
 
 class EmployeeActor(email: String) extends PersistentActor {
 
   var employee = new Employee(email)
 
-  override def persistenceId: String = s"order-$email"
+  override def persistenceId: String = s"employee-$email"
 
   def unregistered: Receive = {
     case RegisterEmployee(firstName, lastName) => {
