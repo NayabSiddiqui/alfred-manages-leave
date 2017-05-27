@@ -14,6 +14,8 @@ libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % "2.5.1"
 libraryDependencies += "com.geteventstore" %% "akka-persistence-eventstore" % "4.1.0"
 libraryDependencies += "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.1.0"
 libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.6"
+libraryDependencies += "org.json4s" % "json4s-native_2.11" % "3.3.0"
+libraryDependencies += "org.json4s" % "json4s-ext_2.11" % "3.3.0"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.1" % Test
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test

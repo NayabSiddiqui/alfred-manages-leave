@@ -4,16 +4,20 @@ import akka.actor.Status.Status
 import akka.actor.{Props, Status}
 import akka.persistence.PersistentActor
 import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
+import domain.EmployeeActor._
 import event._
+import org.joda.time.DateTime
+import play.api.libs.json.Json
 
 case class DomainError(message: String)
+
 case class EventAppliedSuccessfully()
 
 class EmployeeActor(email: String) extends PersistentActor {
 
   var employee = new Employee(email)
 
-  override def persistenceId: String = s"order-$email"
+  override def persistenceId: String = s"employee-$email"
 
   def unregistered: Receive = {
     case RegisterEmployee(firstName, lastName) => {
@@ -24,7 +28,7 @@ class EmployeeActor(email: String) extends PersistentActor {
         }
       }
     }
-    case _ => sender ! DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Empoyee")
+    case _ => sender ! DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Employee")
   }
 
   def registered: Receive = {
@@ -39,7 +43,7 @@ class EmployeeActor(email: String) extends PersistentActor {
       }
     }
     case ApplyFullDayLeaves(from, to) => {
-      val event: FullDayLeavesApplied = FullDayLeavesApplied(from, to)
+      val event: LeavesApplied = LeavesApplied(from, to, isHalfDay = false)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -50,7 +54,7 @@ class EmployeeActor(email: String) extends PersistentActor {
       }
     }
     case ApplyHalfDayLeaves(from, to) => {
-      val event: HalfDayLeavesApplied = HalfDayLeavesApplied(from, to)
+      val event: LeavesApplied = LeavesApplied(from, to, isHalfDay = true)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -87,21 +91,21 @@ class EmployeeActor(email: String) extends PersistentActor {
           }
         }
       }
-      case FullDayLeavesApplied(from, to) => {
-        employee.applyFullDayLeaves(from, to) match {
-          case Left(reason) => Left(reason)
-          case Right(updatedEmployee) => {
-            employee = updatedEmployee
-            Right(EventAppliedSuccessfully())
+      case LeavesApplied(from, to, isHalfDay) => {
+        isHalfDay match {
+          case false => employee.applyFullDayLeaves(from, to) match {
+            case Left(reason) => Left(reason)
+            case Right(updatedEmployee) => {
+              employee = updatedEmployee
+              Right(EventAppliedSuccessfully())
+            }
           }
-        }
-      }
-      case HalfDayLeavesApplied(from, to) => {
-        employee.applyHalfDayLeaves(from, to) match {
-          case Left(reason) => Left(reason)
-          case Right(updatedEmployee) => {
-            employee = updatedEmployee
-            Right(EventAppliedSuccessfully())
+          case true => employee.applyHalfDayLeaves(from, to) match {
+            case Left(reason) => Left(reason)
+            case Right(updatedEmployee) => {
+              employee = updatedEmployee
+              Right(EventAppliedSuccessfully())
+            }
           }
         }
       }

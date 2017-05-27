@@ -4,8 +4,8 @@ import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
-
 
 class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
   with WordSpecLike
@@ -17,6 +17,9 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
     TestKit.shutdownActorSystem(system)
   }
 
+  implicit val defaultPatience =
+    PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
+
   "Employee Service" should {
     "register a new employee" in {
       val email = "batman@gotham.com"
@@ -24,9 +27,11 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
       val lastName = "Wayne"
 
       val service = new EmployeeService()
-      val result = service.registerEmployee(email, firstName, lastName).futureValue
+      val futureResult = service.registerEmployee(email, firstName, lastName)
 
-      result.right.getOrElse(fail)
+      whenReady(futureResult){
+        result => result.right.getOrElse(fail)
+      }
     }
 
     "not register same employee again" in {
