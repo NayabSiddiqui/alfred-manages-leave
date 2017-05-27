@@ -3,6 +3,8 @@ organization := "build-something-new"
 
 version := "1.0-SNAPSHOT"
 
+javaOptions in Test += "-Dconfig.file=conf/application.test.conf"
+
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.11"
