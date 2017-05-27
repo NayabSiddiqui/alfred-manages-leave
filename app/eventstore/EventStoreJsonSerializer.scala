@@ -9,15 +9,21 @@ import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEven
 import akka.persistence.eventstore.snapshot.EventStoreSnapshotStore.SnapshotEvent.Snapshot
 import akka.persistence.{PersistentRepr, SnapshotMetadata}
 import event._
+import org.joda.time.DateTime
 import org.json4s.Extraction.decompose
+import org.json4s.JsonAST.{JField, JString}
 import org.json4s._
 import org.json4s.ext.JodaTimeSerializers
+import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 
+import scala.collection.generic.SeqFactory
+
 class EventStoreJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
+
   import EventStoreJsonSerializer._
 
-  implicit val formats = DefaultFormats + SnapshotSerializer + new PersistentReprSerializer(system) + ActorRefSerializer ++ JodaTimeSerializers.all
+  implicit val formats = DefaultFormats + SnapshotSerializer + new PersistentReprSerializer(system) + ActorRefSerializer ++ JodaTimeSerializers.all + new EmployeeEventSerializer
 
   def identifier = Identifier
 
@@ -26,18 +32,25 @@ class EventStoreJsonSerializer(val system: ExtendedActorSystem) extends EventSto
   def fromBinary(bytes: Array[Byte], manifestOpt: Option[Class[_]]) = {
     implicit val manifest = manifestOpt match {
       case Some(x) => Manifest.classType(x)
-      case None    => Manifest.AnyRef
+      case None => Manifest.AnyRef
     }
+
     read(new String(bytes, UTF8))
   }
 
   def toBinary(o: AnyRef) = write(o).getBytes(UTF8)
 
+
   def toEvent(x: AnyRef) = x match {
-    case x: PersistentRepr => EventData(
-      eventType = classFor(x).getName,
-      data = Content(ByteString(toBinary(x)), ContentType.Json)
-    )
+    case x: PersistentRepr => {
+      val payload = write(x.payload.asInstanceOf[EmployeeEvent])
+      val eventData = EventData(
+        eventType = classFor(x).getName,
+        data = Content(ByteString(payload), ContentType.Json),
+        metadata = Content(ByteString(toBinary(x)), ContentType.Json)
+      )
+      eventData
+    }
 
     case x: SnapshotEvent => EventData(
       eventType = classFor(x).getName,
@@ -48,15 +61,18 @@ class EventStoreJsonSerializer(val system: ExtendedActorSystem) extends EventSto
   }
 
   def fromEvent(event: Event, manifest: Class[_]) = {
-    val clazz = Class.forName(event.data.eventType)
-    val result = fromBinary(event.data.data.value.toArray, clazz)
+    val clazz: Class[_] = classOf[PersistentRepr]
+    val result = fromBinary(event.data.metadata.value.toArray, clazz)
     if (manifest.isInstance(result)) result
     else sys.error(s"Cannot deserialize event as $manifest, event: $event")
   }
 
   def classFor(x: AnyRef) = x match {
-    case x: PersistentRepr => classOf[PersistentRepr]
-    case _                 => x.getClass
+    case x: PersistentRepr => x.payload match {
+      case e: EmployeeEvent => x.payload.getClass
+      case _ => classOf[PersistentRepr]
+    }
+    case _ => x.getClass
   }
 
   object ActorRefSerializer extends Serializer[ActorRef] {
@@ -70,6 +86,7 @@ class EventStoreJsonSerializer(val system: ExtendedActorSystem) extends EventSto
       case x: ActorRef => JString(x.path.toSerializationFormat)
     }
   }
+
 }
 
 object EventStoreJsonSerializer {
@@ -90,31 +107,44 @@ object EventStoreJsonSerializer {
     }
   }
 
+  class EmployeeEventSerializer extends CustomSerializer[EmployeeEvent](format => ( {
+
+    case JObject(List(JField("firstName", JString(firstName)), JField("lastName", JString(lastName)))) =>
+      EmployeeRegistered(firstName, lastName)
+    case JObject(List(JField("creditedLeaves", JDouble(creditedLeaves)))) =>
+      LeavesCredited(creditedLeaves.toFloat)
+    case JObject(List(JField("from", JString(from)), JField("to", JString(to)), JField("isHalfDay", JBool(isHalfDay)))) =>
+      LeavesApplied(DateTime.parse(from), DateTime.parse(to), isHalfDay)
+  }, {
+    case EmployeeRegistered(firstName, lastName) =>
+      JObject(List(JField("firstName", JString(firstName)), JField("lastName", JString(lastName))))
+    case LeavesCredited(creditedLeaves) =>
+      JObject(List(JField("creditedLeaves", JDouble(creditedLeaves.toDouble))))
+    case LeavesApplied(from, to, isHalfDay) =>
+      JObject(List(JField("from", JString(from.toString)), JField("to", JString(to.toString)), JField("isHalfDay", JBool(isHalfDay))))
+  }))
+
   class PersistentReprSerializer(system: ExtendedActorSystem) extends Serializer[PersistentRepr] {
     val Clazz = classOf[PersistentRepr]
 
     def deserialize(implicit format: Formats) = {
       case (TypeInfo(Clazz, _), json) =>
+
         val x = json.extract[Mapping]
 
-        val payload = x.manifest match {
-          case "event.EmployeeRegistered" => read[EmployeeRegistered](x.payload)
-          case "event.LeavesCredited" => read[LeavesCredited](x.payload)
-          case "event.FullDayLeavesApplied" => read[FullDayLeavesApplied](x.payload)
-          case "event.HalfDayLeavesApplied" => read[HalfDayLeavesApplied](x.payload)
-        }
         PersistentRepr(
-          payload = payload,
+          payload = x.payload,
           sequenceNr = x.sequenceNr,
           persistenceId = x.persistenceId,
           manifest = x.manifest,
           writerUuid = x.writerUuid
         )
     }
+
     def serialize(implicit format: Formats) = {
       case x: PersistentRepr =>
         val payload = x.payload match {
-          case e:EmployeeEvent => write(e)
+          case e: EmployeeEvent => e
         }
         val mapping = Mapping(
           payload = payload,
@@ -128,10 +158,11 @@ object EventStoreJsonSerializer {
   }
 
   case class Mapping(
-                      payload:       String,
-                      sequenceNr:    Long,
+                      payload: EmployeeEvent,
+                      sequenceNr: Long,
                       persistenceId: String,
-                      manifest:      String,
-                      writerUuid:    String
+                      manifest: String,
+                      writerUuid: String
                     )
+
 }

@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 case class Success()
 
 case class EmployeeService @Inject()(implicit private val system: ActorSystem, ec: ExecutionContext = ExecutionContext.global) {
-  implicit val timeout = Timeout(20 seconds)
+  implicit val timeout = Timeout(30 seconds)
 
   def registerEmployee(email: String, firstName: String, lastName: String)
   : Future[Either[String, Success]] = {
