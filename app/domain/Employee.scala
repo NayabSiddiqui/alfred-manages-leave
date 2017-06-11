@@ -2,11 +2,11 @@ package domain
 
 import org.joda.time.{DateTime, Days}
 
-case class Employee private(email: String, firstName: String, lastName: String, leaveBalance: Float = 0) {
-  require(!email.isEmpty, "email cannot be empty")
-  def this(email: String) = this(email, null, null, 0f)
+case class Employee private(id: String, email: String, givenName: String, leaveBalance: Float = 0) {
+  require(!id.isEmpty, "Id cannot be empty")
+  def this(id: String) = this(id, null, null, 0f)
 
-  def register(firstName: String, lastName: String): Employee = copy(firstName = firstName, lastName = lastName)
+  def register(email: String, givenName: String): Employee = copy(email = email, givenName = givenName)
 
   def creditLeaves(creditedLeaves: Float): Either[String, Employee] = {
     if(creditedLeaves < 0) Left("Cannot credit negative leaves")

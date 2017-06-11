@@ -16,33 +16,33 @@ import scala.concurrent.Future
 case class EmployeeController @Inject()(private val employeeService: EmployeeService) extends Controller {
 
   def registerEmployee: Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val id = (request.body \ "id").as[String]
     val email = (request.body \ "email").as[String]
-    val firstName = (request.body \ "firstName").as[String]
-    val lastName = (request.body \ "lastName").as[String]
+    val givenName = (request.body \ "givenName").as[String]
 
-    val result: Future[Either[String, Success]] = employeeService.registerEmployee(email, firstName, lastName)
+    val result: Future[Either[String, Success]] = employeeService.registerEmployee(id, email, givenName)
     result.map {
       case Left(reason) => BadRequest(reason)
       case Right(_) => Created
     }
   }
 
-  def applyLeaves(email: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def applyLeaves(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val from = DateTime.parse((request.body \ "from").as[String])
     val to = DateTime.parse((request.body \ "to").as[String])
     val isHalfDay = (request.body \ "isHalfDay").as[Boolean]
 
-    val result = if(isHalfDay) employeeService.applyHalfDayLeaves(email, from, to) else employeeService.applyFullDayLeaves(email, from, to)
+    val result = if(isHalfDay) employeeService.applyHalfDayLeaves(id, from, to) else employeeService.applyFullDayLeaves(id, from, to)
     result.map {
       case Left(reason) => BadRequest(reason)
       case Right(_) => Ok
     }
   }
 
-  def creditLeaves(email: String): Action[JsValue] = Action.async(parse.json) {implicit request =>
+  def creditLeaves(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val creditedLeaves = (request.body \ "creditedLeaves").as[String].toFloat
 
-    val result = employeeService.creditLeaves(email, creditedLeaves)
+    val result = employeeService.creditLeaves(id, creditedLeaves)
     result.map {
       case Left(reason) => BadRequest(reason)
       case Right(_) => Ok

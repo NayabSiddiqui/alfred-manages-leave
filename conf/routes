@@ -4,14 +4,14 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET         /                                   controllers.HomeController.index
+GET         /                                       controllers.HomeController.index
 
 # Employee controller
-POST        /api/employees                      @controllers.EmployeeController.registerEmployee
+POST        /api/employees                          @controllers.EmployeeController.registerEmployee
 
-POST        /api/employees/:email/leaves        @controllers.EmployeeController.applyLeaves(email: String)
+POST        /api/employees/:id/leaves               @controllers.EmployeeController.applyLeaves(id: String)
 
-POST        /api/employees/:email/leave-balance @controllers.EmployeeController.creditLeaves(email: String)
+POST        /api/employees/:id/leave-balance        @controllers.EmployeeController.creditLeaves(id: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                       controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                           controllers.Assets.versioned(path="/public", file: Asset)

@@ -5,13 +5,13 @@ import org.scalatestplus.play.PlaySpec
 
 class EmployeeSpec extends PlaySpec {
 
+  val id = "ironman"
   val email = "ironman@marvel.com"
-  val firstName = "Tony"
-  val lastName = "Stark"
+  val givenName = "Tony Stark"
 
   def givenRegisteredEmployee = {
-    val employee = new Employee(email)
-    employee.register(firstName, lastName)
+    val employee = new Employee(id)
+    employee.register(email, givenName)
   }
 
   def givenEmployeeWithCreditedLeaves(creditedLeaves: Float): Employee = {
@@ -22,11 +22,11 @@ class EmployeeSpec extends PlaySpec {
   "Employee" should {
     "be able to register himself" in {
 
-      val employee = new Employee(email).register(firstName, lastName)
+      val employee = new Employee(id).register(email, givenName)
 
+      employee.id mustBe id
       employee.email mustBe email
-      employee.firstName mustBe firstName
-      employee.lastName mustBe lastName
+      employee.givenName mustBe givenName
       employee.leaveBalance mustBe 0
     }
 

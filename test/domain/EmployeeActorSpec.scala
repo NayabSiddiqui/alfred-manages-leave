@@ -16,18 +16,18 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
     TestKit.shutdownActorSystem(system)
   }
 
-  def givenActorWithRegisteredEmployee(email: String, firstName: String, lastName: String) = {
-    val employeeActor = system.actorOf(EmployeeActor.props(email))
+  def givenActorWithRegisteredEmployee(id: String, email: String, givenName: String) = {
+    val employeeActor = system.actorOf(EmployeeActor.props(id))
 
-    val registerEmployee = RegisterEmployee(firstName, lastName)
+    val registerEmployee = RegisterEmployee(email, givenName)
 
     employeeActor ! registerEmployee
     expectMsg(EventAppliedSuccessfully())
     employeeActor
   }
 
-  def givenActorWithCreditedLeaves(email: String, firstName: String, lastName: String, creditedLeaves: Float) = {
-    val actor = givenActorWithRegisteredEmployee(email, firstName, lastName)
+  def givenActorWithCreditedLeaves(id: String, email: String, givenName: String, creditedLeaves: Float) = {
+    val actor = givenActorWithRegisteredEmployee(id, email, givenName)
     val creditLeaves = CreditLeaves(creditedLeaves)
     actor ! creditLeaves
     expectMsg(EventAppliedSuccessfully())
@@ -36,13 +36,13 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
   "Employee Actor" should {
     "handle RegisterEmployee command" in {
+      val id = "ironman19"
       val email = "ironman19@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
+      val givenName = "Tony Stark"
 
-      val employeeActor = system.actorOf(EmployeeActor.props(email))
+      val employeeActor = system.actorOf(EmployeeActor.props(id))
 
-      val registerEmployee = RegisterEmployee(firstName, lastName)
+      val registerEmployee = RegisterEmployee(email, givenName)
 
       employeeActor ! registerEmployee
 
@@ -50,48 +50,46 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       employeeActor ! PoisonPill
 
-      val actor2 = system.actorOf(EmployeeActor.props(email))
+      val actor2 = system.actorOf(EmployeeActor.props(id))
       actor2 ! "getEmployee"
-      expectMsg(new Employee(email).register(firstName, lastName))
+      expectMsg(new Employee(id).register(email, givenName))
     }
 
     "should not allow registration of the same employee again" in {
+      val id = "batman1"
       val email = "batman1@dccomics.com"
-      val firstName = "Bruce"
-      val lastName = "Wayne"
+      val givenName = "Bruce Wayne"
 
-      val employeeActor = system.actorOf(EmployeeActor.props(email))
+      val employeeActor = system.actorOf(EmployeeActor.props(id))
 
-      val registerEmployee = RegisterEmployee(firstName, lastName)
+      val registerEmployee = RegisterEmployee(email, givenName)
       employeeActor ! registerEmployee
       expectMsg(EventAppliedSuccessfully())
 
       employeeActor ! registerEmployee
-      expectMsg(DomainError(s"Employee with email $email is already registered."))
+      expectMsg(DomainError(s"Employee with id $id is already registered."))
     }
 
     "should not handle any command before the employee has been registered" in {
-      val email = "batman2@dccomics.com"
-      val firstName = "Bruce"
-      val lastName = "Wayne"
+      val id = "batman2"
 
-      val actor = system.actorOf(EmployeeActor.props(email))
+      val actor = system.actorOf(EmployeeActor.props(id))
 
       actor ! CreditLeaves(11.5f)
-      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Employee"))
+      expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
 
       actor ! ApplyFullDayLeaves(new DateTime(), new DateTime().plusDays(3))
-      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Employee"))
+      expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
 
       actor ! ApplyHalfDayLeaves(new DateTime(), new DateTime().plusDays(3))
-      expectMsg(DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Employee"))
+      expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
     }
 
     "handle CreditLeaves command" in {
+      val id = "ironman2"
       val email = "ironman2@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
-      val actor = givenActorWithRegisteredEmployee(email, firstName, lastName)
+      val givenName = "Tony Stark"
+      val actor = givenActorWithRegisteredEmployee(id, email, givenName)
 
       val creditLeaves = CreditLeaves(11.5f)
       actor ! creditLeaves
@@ -99,17 +97,17 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-      val actor2 = system.actorOf(EmployeeActor.props(email))
+      val actor2 = system.actorOf(EmployeeActor.props(id))
       actor2 ! "getEmployee"
-      expectMsg(new Employee(email).register(firstName, lastName).creditLeaves(11.5f).right.get)
+      expectMsg(new Employee(id).register(email, givenName).creditLeaves(11.5f).right.get)
     }
 
     "handle ApplyFullDayLeaves command" in {
+      val id = "ironman3"
       val email = "ironman3@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
+      val givenName = "Tony Stark"
       val creditedLeaves = 11.5f
-      val actor = givenActorWithCreditedLeaves(email, firstName, lastName, creditedLeaves)
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime()
       val to = from.plusDays(3)
@@ -120,20 +118,20 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-      val recoveredActor = system.actorOf(EmployeeActor.props(email))
+      val recoveredActor = system.actorOf(EmployeeActor.props(id))
       recoveredActor ! "getEmployee"
-      expectMsg(new Employee(email)
-              .register(firstName, lastName)
+      expectMsg(new Employee(id)
+              .register(email, givenName)
               .creditLeaves(creditedLeaves).right.get
         .applyFullDayLeaves(from, to).right.get)
     }
 
     "reject ApplyFullDayLeaves command when leave balance is insufficient" in {
+      val id = "ironman4"
       val email = "ironman4@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
+      val givenName = "Tony Stark"
       val creditedLeaves = 2.5f
-      val actor = givenActorWithCreditedLeaves(email, firstName, lastName, creditedLeaves)
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime()
       val to = from.plusDays(3)
@@ -144,19 +142,19 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-      val recoveredActor = system.actorOf(EmployeeActor.props(email))
+      val recoveredActor = system.actorOf(EmployeeActor.props(id))
       recoveredActor ! "getEmployee"
-      expectMsg(new Employee(email)
-              .register(firstName, lastName)
+      expectMsg(new Employee(id)
+              .register(email, givenName)
               .creditLeaves(creditedLeaves).right.get)
     }
 
     "handle ApplyHalfDayLeaves command" in {
+      val id = "ironman5"
       val email = "ironman5@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
+      val givenName = "Tony Stark"
       val creditedLeaves = 11.5f
-      val actor = givenActorWithCreditedLeaves(email, firstName, lastName, creditedLeaves)
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime()
       val to = from.plusDays(3)
@@ -167,20 +165,20 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-      val recoveredActor = system.actorOf(EmployeeActor.props(email))
+      val recoveredActor = system.actorOf(EmployeeActor.props(id))
       recoveredActor ! "getEmployee"
-      expectMsg(new Employee(email)
-              .register(firstName, lastName)
+      expectMsg(new Employee(id)
+              .register(email, givenName)
               .creditLeaves(creditedLeaves).right.get
         .applyHalfDayLeaves(from, to).right.get)
     }
 
     "reject ApplyHalfDayLeaves command when leave balance is insufficient" in {
+      val id = "ironman6"
       val email = "ironman6@marvel.com"
-      val firstName = "Tony"
-      val lastName = "Stark"
+      val givenName = "Tony Stark"
       val creditedLeaves = 1.0f
-      val actor = givenActorWithCreditedLeaves(email, firstName, lastName, creditedLeaves)
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime()
       val to = from.plusDays(3)
@@ -191,10 +189,10 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-      val recoveredActor = system.actorOf(EmployeeActor.props(email))
+      val recoveredActor = system.actorOf(EmployeeActor.props(id))
       recoveredActor ! "getEmployee"
-      expectMsg(new Employee(email)
-              .register(firstName, lastName)
+      expectMsg(new Employee(id)
+              .register(email, givenName)
               .creditLeaves(creditedLeaves).right.get)
     }
   }

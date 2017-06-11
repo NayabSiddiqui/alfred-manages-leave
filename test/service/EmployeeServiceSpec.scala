@@ -22,12 +22,12 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
 
   "Employee Service" should {
     "register a new employee" in {
+      val id = "batman"
       val email = "batman@gotham.com"
-      val firstName = "Bruce"
-      val lastName = "Wayne"
+      val givenName = "Bruce Wayne"
 
       val service = new EmployeeService()
-      val futureResult = service.registerEmployee(email, firstName, lastName)
+      val futureResult = service.registerEmployee(id, email, givenName)
 
       whenReady(futureResult){
         result => result.right.getOrElse(fail)
@@ -35,39 +35,39 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
     }
 
     "not register same employee again" in {
+      val id = "batman"
       val email = "batman@gotham.com"
-      val firstName = "Bruce"
-      val lastName = "Wayne"
+      val givenName = "Bruce Wayne"
 
       val service = new EmployeeService()
-      val result = service.registerEmployee(email, firstName, lastName).futureValue
+      val result = service.registerEmployee(id, email, givenName).futureValue
 
-      result.left.getOrElse(fail) mustBe s"Employee with email $email is already registered."
+      result.left.getOrElse(fail) mustBe s"Employee with id $id is already registered."
     }
 
     "credit leaves to employee" in {
-      val email = "batman1@gotham.com"
-      val firstName = "Bruce"
-      val lastName = "Wayne"
+      val id = "batman1"
+      val email = "batman@gotham.com"
+      val givenName = "Bruce Wayne"
       val service = new EmployeeService()
-      var result = service.registerEmployee(email, firstName, lastName).futureValue
+      var result = service.registerEmployee(id, email, givenName).futureValue
       result.right.getOrElse(fail)
 
-      result = service.creditLeaves(email, 14.5f).futureValue
+      result = service.creditLeaves(id, 14.5f).futureValue
       result.right.getOrElse(fail)
     }
 
     "apply for full day leaves" in {
-      val email = "batman1@gotham.com"
+      val id = "batman1"
       val service = new EmployeeService()
-      val result = service.applyFullDayLeaves(email, new DateTime(), new DateTime()).futureValue
+      val result = service.applyFullDayLeaves(id, new DateTime(), new DateTime()).futureValue
       result.right.getOrElse(fail)
     }
 
     "apply for half day leaves" in {
-      val email = "batman1@gotham.com"
+      val id = "batman1"
       val service = new EmployeeService()
-      val result = service.applyHalfDayLeaves(email, new DateTime(), new DateTime()).futureValue
+      val result = service.applyHalfDayLeaves(id, new DateTime(), new DateTime()).futureValue
       result.right.getOrElse(fail)
     }
   }

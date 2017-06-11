@@ -13,11 +13,11 @@ case class DomainError(message: String)
 
 case class EventAppliedSuccessfully()
 
-class EmployeeActor(email: String) extends PersistentActor {
+class EmployeeActor(id: String) extends PersistentActor {
 
-  var employee = new Employee(email)
+  var employee = new Employee(id)
 
-  override def persistenceId: String = s"employee-$email"
+  override def persistenceId: String = s"employee-$id"
 
   def unregistered: Receive = {
     case RegisterEmployee(firstName, lastName) => {
@@ -28,11 +28,11 @@ class EmployeeActor(email: String) extends PersistentActor {
         }
       }
     }
-    case _ => sender ! DomainError(s"Employee with email $email is not registered. Cannot handle commands for unregistered Employee")
+    case _ => sender ! DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee")
   }
 
   def registered: Receive = {
-    case RegisterEmployee(firstName, lastName) => sender ! DomainError(s"Employee with email $email is already registered.")
+    case RegisterEmployee(firstName, lastName) => sender ! DomainError(s"Employee with id $id is already registered.")
     case CreditLeaves(creditedLeaves) => {
       persist(LeavesCredited(creditedLeaves)) { event => {
         applyEvent(event) match {
@@ -114,5 +114,5 @@ class EmployeeActor(email: String) extends PersistentActor {
 }
 
 object EmployeeActor {
-  def props(email: String): Props = Props(new EmployeeActor(email))
+  def props(id: String): Props = Props(new EmployeeActor(id))
 }

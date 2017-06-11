@@ -29,19 +29,19 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
 
   "EmployeeController" should {
     "return CREATED after successfully registering a new Employee" in {
-      val email = "coleson@shield.com"
-      val firstName = "Phillip"
-      val lastName = "Coulson"
-      when(employeeService.registerEmployee(email, firstName, lastName)).thenReturn({
+      val id = "coleson"
+      val email = "coulson@shield.com"
+      val givenName = "Phillip Coulson"
+      when(employeeService.registerEmployee(id, email, givenName)).thenReturn({
         Future {
           Right(Success())
         }
       })
 
       val requestBody: JsObject = Json.obj(
+        "id" -> id,
         "email" -> email,
-        "firstName" -> firstName,
-        "lastName" -> lastName
+        "givenName" -> givenName
       )
 
       val request = FakeRequest("POST", "/api/employees")
@@ -59,19 +59,19 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
     }
 
     "return bad request when trying to register an already registered employee" in {
-      val email = "coleson@shield.com"
-      val firstName = "Phillip"
-      val lastName = "Coulson"
-      when(employeeService.registerEmployee(email, firstName, lastName)).thenReturn({
+      val id = "coleson"
+      val email = "coulson@shield.com"
+      val givenName = "Phillip Coulson"
+      when(employeeService.registerEmployee(id, email, givenName)).thenReturn({
         Future {
           Left("Employee is already registered")
         }
       })
 
       val requestBody: JsObject = Json.obj(
+        "id" -> id,
         "email" -> email,
-        "firstName" -> firstName,
-        "lastName" -> lastName
+        "givenName" -> givenName
       )
 
       val request = FakeRequest("POST", "/api/employees")
@@ -89,7 +89,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
     }
 
     "return bad request when trying to apply leaves for a non-registered employee" in {
-      val unregisteredEmail = "coleson@shield.com"
+      val unregisteredId = "coleson@shield.com"
       val from = new DateTime()
       val to = from.plusDays(2)
       val requestBody: JsObject = Json.obj(
@@ -97,7 +97,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
         "to" -> to.toString,
         "isHalfDay" -> true
       )
-      val request = FakeRequest("POST", s"/api/employees/${unregisteredEmail}/leaves")
+      val request = FakeRequest("POST", s"/api/employees/${unregisteredId}/leaves")
         .withHeaders(HOST -> "localhost",
           CONTENT_TYPE -> "application/json")
         .withBody(requestBody)
@@ -110,7 +110,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
 
       val controller = new EmployeeController(employeeService)
 
-      val result = controller.applyLeaves(unregisteredEmail)(request)
+      val result = controller.applyLeaves(unregisteredId)(request)
       whenReady(result) { r =>
         contentAsString(result) mustBe "Employee is not registered"
         r.header.status mustBe BAD_REQUEST
@@ -118,7 +118,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
     }
 
     "return OK when applying leaves employee" in {
-      val unregisteredEmail = "coleson@shield.com"
+      val unregisteredId = "coleson@shield.com"
       val from = new DateTime()
       val to = from.plusDays(2)
       val requestBody: JsObject = Json.obj(
@@ -126,7 +126,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
         "to" -> to.toString,
         "isHalfDay" -> true
       )
-      val request = FakeRequest("POST", s"/api/employees/${unregisteredEmail}/leaves")
+      val request = FakeRequest("POST", s"/api/employees/${unregisteredId}/leaves")
         .withHeaders(HOST -> "localhost",
           CONTENT_TYPE -> "application/json")
         .withBody(requestBody)
@@ -139,7 +139,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
 
       val controller = new EmployeeController(employeeService)
 
-      val result = controller.applyLeaves(unregisteredEmail)(request)
+      val result = controller.applyLeaves(unregisteredId)(request)
       whenReady(result) { r =>
         contentAsString(result) mustBe empty
         r.header.status mustBe OK
@@ -147,27 +147,27 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
     }
 
     "return OK when crediting the leaves for an employee" in {
-      val email = "coleson@shield.com"
+      val id = "coleson@shield.com"
       val creditedLeaves = 12.5f
 
       val requestBody: JsObject = Json.obj(
         "creditedLeaves" -> creditedLeaves.toString
       )
-      val request = FakeRequest("POST", s"/api/employees/${email}/leave-balance")
+      val request = FakeRequest("POST", s"/api/employees/${id}/leave-balance")
         .withHeaders(HOST -> "localhost",
           CONTENT_TYPE -> "application/json")
         .withBody(requestBody)
 
-      when(employeeService.creditLeaves(email,creditedLeaves))
+      when(employeeService.creditLeaves(id, creditedLeaves))
         .thenReturn({
-          Future{
+          Future {
             Right(Success())
           }
         })
 
       val controller = new EmployeeController(employeeService)
 
-      val result = controller.creditLeaves(email)(request)
+      val result = controller.creditLeaves(id)(request)
       whenReady(result) { r =>
         contentAsString(result) mustBe empty
         r.header.status mustBe OK
