@@ -4,7 +4,7 @@ import org.joda.time.DateTime
 
 sealed trait EmployeeEvent extends Event
 
-case class EmployeeRegistered(firstName: String, lastName: String) extends EmployeeEvent
+case class EmployeeRegistered(email: String, givenName: String) extends EmployeeEvent
 
 case class LeavesCredited(creditedLeaves: Float) extends EmployeeEvent
 

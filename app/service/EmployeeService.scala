@@ -17,18 +17,18 @@ case class Success()
 case class EmployeeService @Inject()(implicit private val system: ActorSystem, ec: ExecutionContext = ExecutionContext.global) {
   implicit val timeout = Timeout(30 seconds)
 
-  def registerEmployee(email: String, firstName: String, lastName: String)
+  def registerEmployee(id: String, email: String, givenName: String)
   : Future[Either[String, Success]] = {
-    val actor = system.actorOf(EmployeeActor.props(email))
-    val result: Future[Any] = actor ? RegisterEmployee(firstName, lastName)
+    val actor = system.actorOf(EmployeeActor.props(id))
+    val result: Future[Any] = actor ? RegisterEmployee(email, givenName)
     result.map {
       case DomainError(message) => Left(message)
       case EventAppliedSuccessfully() => Right(Success())
     }
   }
 
-  def creditLeaves(email: String, creditedLeaves: Float): Future[Either[String, Success]] = {
-    val actor = system.actorOf(EmployeeActor.props(email))
+  def creditLeaves(id: String, creditedLeaves: Float): Future[Either[String, Success]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
     val result: Future[Any] = actor ? CreditLeaves(creditedLeaves)
     result.map {
       case DomainError(message) => Left(message)
@@ -36,8 +36,8 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
     }
   }
 
-  def applyFullDayLeaves(email: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
-    val actor = system.actorOf(EmployeeActor.props(email))
+  def applyFullDayLeaves(id: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
     val result: Future[Any] = actor ? ApplyFullDayLeaves(from, to)
     result.map {
       case DomainError(message) => Left(message)
@@ -45,8 +45,8 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
     }
   }
 
-  def applyHalfDayLeaves(email: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
-    val actor = system.actorOf(EmployeeActor.props(email))
+  def applyHalfDayLeaves(id: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
     val result: Future[Any] = actor ? ApplyHalfDayLeaves(from, to)
     result.map {
       case DomainError(message) => Left(message)

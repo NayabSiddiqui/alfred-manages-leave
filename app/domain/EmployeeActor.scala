@@ -20,8 +20,8 @@ class EmployeeActor(id: String) extends PersistentActor {
   override def persistenceId: String = s"employee-$id"
 
   def unregistered: Receive = {
-    case RegisterEmployee(firstName, lastName) => {
-      persist(EmployeeRegistered(firstName, lastName)) { event =>
+    case RegisterEmployee(email, givenName) => {
+      persist(EmployeeRegistered(email, givenName)) { event =>
         applyEvent(event) match {
           case Left(reason) => sender ! DomainError(reason)
           case Right(success) => sender ! success
@@ -32,7 +32,7 @@ class EmployeeActor(id: String) extends PersistentActor {
   }
 
   def registered: Receive = {
-    case RegisterEmployee(firstName, lastName) => sender ! DomainError(s"Employee with id $id is already registered.")
+    case RegisterEmployee(email, givenName) => sender ! DomainError(s"Employee with id $id is already registered.")
     case CreditLeaves(creditedLeaves) => {
       persist(LeavesCredited(creditedLeaves)) { event => {
         applyEvent(event) match {
@@ -77,8 +77,8 @@ class EmployeeActor(id: String) extends PersistentActor {
 
   def applyEvent(event: EmployeeEvent): Either[String, EventAppliedSuccessfully] = {
     event match {
-      case EmployeeRegistered(firstName, lastName) => {
-        employee = employee.register(firstName, lastName)
+      case EmployeeRegistered(email, givenName) => {
+        employee = employee.register(email, givenName)
         context become registered
         Right(EventAppliedSuccessfully())
       }
