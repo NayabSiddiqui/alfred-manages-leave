@@ -109,15 +109,15 @@ object EventStoreJsonSerializer {
 
   class EmployeeEventSerializer extends CustomSerializer[EmployeeEvent](format => ( {
 
-    case JObject(List(JField("firstName", JString(firstName)), JField("lastName", JString(lastName)))) =>
-      EmployeeRegistered(firstName, lastName)
+    case JObject(List(JField("email", JString(email)), JField("givenName", JString(givenName)))) =>
+      EmployeeRegistered(email, givenName)
     case JObject(List(JField("creditedLeaves", JDouble(creditedLeaves)))) =>
       LeavesCredited(creditedLeaves.toFloat)
     case JObject(List(JField("from", JString(from)), JField("to", JString(to)), JField("isHalfDay", JBool(isHalfDay)))) =>
       LeavesApplied(DateTime.parse(from), DateTime.parse(to), isHalfDay)
   }, {
-    case EmployeeRegistered(firstName, lastName) =>
-      JObject(List(JField("firstName", JString(firstName)), JField("lastName", JString(lastName))))
+    case EmployeeRegistered(email, givenName) =>
+      JObject(List(JField("email", JString(email)), JField("givenName", JString(givenName))))
     case LeavesCredited(creditedLeaves) =>
       JObject(List(JField("creditedLeaves", JDouble(creditedLeaves.toDouble))))
     case LeavesApplied(from, to, isHalfDay) =>
