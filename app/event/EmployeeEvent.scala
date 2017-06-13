@@ -8,6 +8,6 @@ case class EmployeeRegistered(email: String, givenName: String) extends Employee
 
 case class LeavesCredited(creditedLeaves: Float) extends EmployeeEvent
 
-case class LeavesApplied(from: DateTime, to: DateTime, isHalfDay: Boolean) extends EmployeeEvent
+case class LeavesApplied(applicationId: String , from: DateTime, to: DateTime, isHalfDay: Boolean) extends EmployeeEvent
 
 

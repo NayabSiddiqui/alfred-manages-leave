@@ -1,27 +1,49 @@
 package domain
 
-import org.joda.time.{DateTime, Days}
+import java.util.UUID
 
-case class Employee private(id: String, email: String, givenName: String, leaveBalance: Float = 0) {
+import org.joda.time.{DateTime, DateTimeConstants, Days}
+
+case class Employee private(id: String, email: String, givenName: String, leaveBalance: Float = 0,
+                            leaveApplications: List[LeaveApplication]) {
   require(!id.isEmpty, "Id cannot be empty")
-  def this(id: String) = this(id, null, null, 0f)
+
+  def this(id: String) = this(id, null, null, 0f, List.empty[LeaveApplication])
 
   def register(email: String, givenName: String): Employee = copy(email = email, givenName = givenName)
 
   def creditLeaves(creditedLeaves: Float): Either[String, Employee] = {
-    if(creditedLeaves < 0) Left("Cannot credit negative leaves")
+    if (creditedLeaves < 0) Left("Cannot credit negative leaves")
     else Right(copy(leaveBalance = leaveBalance + creditedLeaves))
   }
 
-  def applyFullDayLeaves(from: DateTime, to: DateTime): Either[String, Employee] = {
-    val numberOfLeavesApplied = Days.daysBetween(from, to).getDays
-    if (numberOfLeavesApplied > leaveBalance) Left("Insufficient leave balance")
-    else Right(copy(leaveBalance = leaveBalance - numberOfLeavesApplied))
+  def applyFullDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, from: DateTime, to: DateTime): Either[String, Employee] = {
+    val leaveDays = getWorkingDayLeaves(from, to)
+    if (leaveDays.length > leaveBalance) Left("Insufficient leave balance")
+    else {
+      val application = new LeaveApplication(leaveApplicationId, leaveDays)
+      Right(copy(leaveBalance = leaveBalance - leaveDays.length,
+        leaveApplications = application :: leaveApplications))
+    }
   }
 
-  def applyHalfDayLeaves(from: DateTime, to: DateTime): Either[String, Employee] = {
-    val numberOfLeavesApplied = Days.daysBetween(from, to).getDays * 0.5f
+  def applyHalfDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, from: DateTime, to: DateTime): Either[String, Employee] = {
+    val leaveDays = getWorkingDayLeaves(from, to)
+    val numberOfLeavesApplied = leaveDays.length * 0.5
     if (numberOfLeavesApplied > leaveBalance) Left("Insufficient leave balance")
-    else Right(copy(leaveBalance = leaveBalance - numberOfLeavesApplied))
+    else {
+      val application = new LeaveApplication(leaveApplicationId, leaveDays)
+      Right(copy(leaveBalance = leaveBalance - numberOfLeavesApplied.toFloat,
+        leaveApplications = application :: leaveApplications))
+    }
+  }
+
+  private def getWorkingDayLeaves(from: DateTime, to: DateTime): List[DateTime] = {
+    val totalNumberOfDays = Days.daysBetween(from, to).getDays
+    val allDates = for (day <- 0 to totalNumberOfDays) yield from.plusDays(day)
+    allDates.filter(date =>
+      date.getDayOfWeek != DateTimeConstants.SATURDAY && date.getDayOfWeek != DateTimeConstants.SUNDAY)
+      .toList
   }
 }
+

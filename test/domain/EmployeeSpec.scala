@@ -1,5 +1,7 @@
 package domain
 
+import java.util.UUID
+
 import org.joda.time.{DateTime, Days}
 import org.scalatestplus.play.PlaySpec
 
@@ -28,6 +30,7 @@ class EmployeeSpec extends PlaySpec {
       employee.email mustBe email
       employee.givenName mustBe givenName
       employee.leaveBalance mustBe 0
+      employee.leaveApplications mustBe empty
     }
 
     "get leaves credited" in {
@@ -51,22 +54,47 @@ class EmployeeSpec extends PlaySpec {
     "be able to apply full day leaves" in {
       val employee = givenEmployeeWithCreditedLeaves(12.5f)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
 
-      employee.applyFullDayLeaves(from, to) match {
+      employee.applyFullDayLeaves("myApplication", from, to) match {
         case Left(_) => fail
-        case Right(updatedEmployee) => updatedEmployee.leaveBalance mustBe 9.5f
+        case Right(updatedEmployee) => {
+          updatedEmployee.leaveBalance mustBe 8.5f
+          val leaveApplications = updatedEmployee.leaveApplications
+          leaveApplications.length mustBe 1
+          val application = leaveApplications.head
+          application.id mustBe "myApplication"
+          application.days.length mustBe 4
+        }
+      }
+    }
+
+    "be able to apply full day leaves excluding weekends" in {
+      val employee = givenEmployeeWithCreditedLeaves(12.5f)
+
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 20, 0, 0)
+
+      employee.applyFullDayLeaves(from = from, to = to) match {
+        case Left(_) => fail
+        case Right(updatedEmployee) => {
+          updatedEmployee.leaveBalance mustBe 5.5f
+          val leaveApplications = updatedEmployee.leaveApplications
+          leaveApplications.length mustBe 1
+          val application = leaveApplications.head
+          application.days.length mustBe 7
+        }
       }
     }
 
     "not be able to apply full day leaves with insufficient balance" in {
       val employee = givenEmployeeWithCreditedLeaves(2.5f)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
 
-      employee.applyFullDayLeaves(from, to) match {
+      employee.applyFullDayLeaves(from = from, to = to) match {
         case Left(reason) => reason mustBe "Insufficient leave balance"
         case Right(_) => fail
       }
@@ -75,22 +103,29 @@ class EmployeeSpec extends PlaySpec {
     "be able to apply half day leaves" in {
       val employee = givenEmployeeWithCreditedLeaves(2.5f)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 14, 0, 0)
 
-      employee.applyHalfDayLeaves(from, to) match {
+      employee.applyHalfDayLeaves("myLeaveApplication", from = from, to = to) match {
         case Left(_) => fail
-        case Right(updatedEmployee) => updatedEmployee.leaveBalance mustBe 1f
+        case Right(updatedEmployee) => {
+          updatedEmployee.leaveBalance mustBe 1f
+          updatedEmployee.leaveApplications.length mustBe 1
+
+          val application = updatedEmployee.leaveApplications.head
+          application.id mustBe "myLeaveApplication"
+          application.days.length mustBe 3
+        }
       }
     }
 
     "not be able to apply half day leaves with insufficient balance" in {
       val employee = givenEmployeeWithCreditedLeaves(1f)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
 
-      employee.applyHalfDayLeaves(from, to) match {
+      employee.applyHalfDayLeaves(from = from, to = to) match {
         case Left(reason) => reason mustBe "Insufficient leave balance"
         case Right(_) => fail
       }

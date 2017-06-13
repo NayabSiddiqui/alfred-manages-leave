@@ -1,13 +1,11 @@
 package domain
 
-import akka.actor.Status.Status
-import akka.actor.{Props, Status}
+import java.util.UUID
+
+import akka.actor.Props
 import akka.persistence.PersistentActor
 import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
-import domain.EmployeeActor._
 import event._
-import org.joda.time.DateTime
-import play.api.libs.json.Json
 
 case class DomainError(message: String)
 
@@ -43,7 +41,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyFullDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(from, to, isHalfDay = false)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from,to, isHalfDay = false)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -54,7 +52,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyHalfDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(from, to, isHalfDay = true)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from,to, isHalfDay = true)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -91,16 +89,16 @@ class EmployeeActor(id: String) extends PersistentActor {
           }
         }
       }
-      case LeavesApplied(from, to, isHalfDay) => {
+      case LeavesApplied(applicationId,from, to, isHalfDay) => {
         isHalfDay match {
-          case false => employee.applyFullDayLeaves(from, to) match {
+          case false => employee.applyFullDayLeaves(applicationId,from, to) match {
             case Left(reason) => Left(reason)
             case Right(updatedEmployee) => {
               employee = updatedEmployee
               Right(EventAppliedSuccessfully())
             }
           }
-          case true => employee.applyHalfDayLeaves(from, to) match {
+          case true => employee.applyHalfDayLeaves(applicationId, from, to) match {
             case Left(reason) => Left(reason)
             case Right(updatedEmployee) => {
               employee = updatedEmployee
