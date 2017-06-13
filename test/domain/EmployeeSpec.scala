@@ -21,6 +21,11 @@ class EmployeeSpec extends PlaySpec {
     employee.creditLeaves(creditedLeaves).right.get
   }
 
+  def givenEmployeeWithAppliedLeaves(creditedLeaves: Float, from: DateTime, to: DateTime) = {
+    val employee = givenEmployeeWithCreditedLeaves(creditedLeaves)
+    employee.applyFullDayLeaves(UUID.randomUUID().toString, from, to).right.get
+  }
+
   "Employee" should {
     "be able to register himself" in {
 
@@ -67,6 +72,23 @@ class EmployeeSpec extends PlaySpec {
           application.id mustBe "myApplication"
           application.days.length mustBe 4
         }
+      }
+    }
+
+    "not be able to apply duplicate leaves" in {
+      val from = new DateTime()
+      val to = from.plusDays(6)
+      val creditedLeaves: Float = 12.5f
+
+      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
+
+      val newLeavesFrom = from.plusDays(2).plusHours(4)
+      val newLeavesTill = from.plusDays(3)
+
+
+      employee.applyFullDayLeaves(UUID.randomUUID().toString, newLeavesFrom, newLeavesTill) match {
+        case Left(reason) => reason mustBe "Leaves for one or more dates have already been applied."
+        case Right(_) => fail
       }
     }
 

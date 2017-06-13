@@ -41,7 +41,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyFullDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from,to, isHalfDay = false)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from.withTimeAtStartOfDay,to.withTimeAtStartOfDay, isHalfDay = false)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -52,7 +52,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyHalfDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from,to, isHalfDay = true)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from.withTimeAtStartOfDay,to.withTimeAtStartOfDay, isHalfDay = true)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
