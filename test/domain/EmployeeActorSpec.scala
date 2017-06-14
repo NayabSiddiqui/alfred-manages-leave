@@ -2,7 +2,7 @@ package domain
 
 import akka.actor.{ActorSystem, PoisonPill, Status}
 import akka.testkit.{ImplicitSender, TestKit}
-import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
+import command._
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -196,6 +196,19 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       expectMsg(new Employee(id)
         .register(email, givenName)
         .creditLeaves(creditedLeaves).right.get)
+    }
+
+    "handle GetLeaveBalance command" in {
+      val id = "ironman7"
+      val email = "ironman7@marvel.com"
+      val givenName = "Tony Stark"
+      val creditedLeaves = 11.5f
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
+
+      val getLeaveBalance = GetLeaveBalance()
+
+      actor ! getLeaveBalance
+      expectMsg(11.5f)
     }
   }
 }

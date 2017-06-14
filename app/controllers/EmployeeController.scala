@@ -15,6 +15,15 @@ import scala.concurrent.Future
 @Singleton
 case class EmployeeController @Inject()(private val employeeService: EmployeeService) extends Controller {
 
+  def getLeaveBalance(id: String) = Action.async { implicit request =>
+    val result = employeeService.getLeaveBalance(id)
+    result map {
+      case Left(reason) => BadRequest(reason)
+      case Right(leaveBalance) => Ok(leaveBalance.toString)
+    }
+  }
+
+
   def registerEmployee: Action[JsValue] = Action.async(parse.json) { implicit request =>
     val id = (request.body \ "id").as[String]
     val email = (request.body \ "email").as[String]
@@ -32,7 +41,7 @@ case class EmployeeController @Inject()(private val employeeService: EmployeeSer
     val to = DateTime.parse((request.body \ "to").as[String])
     val isHalfDay = (request.body \ "isHalfDay").as[Boolean]
 
-    val result = if(isHalfDay) employeeService.applyHalfDayLeaves(id, from, to) else employeeService.applyFullDayLeaves(id, from, to)
+    val result = if (isHalfDay) employeeService.applyHalfDayLeaves(id, from, to) else employeeService.applyFullDayLeaves(id, from, to)
     result.map {
       case Left(reason) => BadRequest(reason)
       case Right(_) => Ok

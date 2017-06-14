@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.Props
 import akka.persistence.PersistentActor
-import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
+import command._
 import event._
 
 case class DomainError(message: String)
@@ -41,7 +41,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyFullDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from.withTimeAtStartOfDay,to.withTimeAtStartOfDay, isHalfDay = false)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, from.withTimeAtStartOfDay, to.withTimeAtStartOfDay, isHalfDay = false)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -52,7 +52,7 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
     case ApplyHalfDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString,from.withTimeAtStartOfDay,to.withTimeAtStartOfDay, isHalfDay = true)
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, from.withTimeAtStartOfDay, to.withTimeAtStartOfDay, isHalfDay = true)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -63,8 +63,13 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
 
+    case GetLeaveBalance() => {
+      sender ! employee.leaveBalance
+    }
+
     //TODO only for testing purpose. Maybe find a better way to do this
     case "getEmployee" => sender ! employee
+    case _ => sender ! DomainError("Unknown command. Cannot process.")
   }
 
   override def receiveCommand: Receive = unregistered
@@ -89,9 +94,9 @@ class EmployeeActor(id: String) extends PersistentActor {
           }
         }
       }
-      case LeavesApplied(applicationId,from, to, isHalfDay) => {
+      case LeavesApplied(applicationId, from, to, isHalfDay) => {
         isHalfDay match {
-          case false => employee.applyFullDayLeaves(applicationId,from, to) match {
+          case false => employee.applyFullDayLeaves(applicationId, from, to) match {
             case Left(reason) => Left(reason)
             case Right(updatedEmployee) => {
               employee = updatedEmployee

@@ -12,7 +12,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Results
+import play.api.mvc.{Action, AnyContent, Results}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import service.{EmployeeService, Success}
@@ -153,7 +153,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
       val requestBody: JsObject = Json.obj(
         "creditedLeaves" -> creditedLeaves.toString
       )
-      val request = FakeRequest("POST", s"/api/employees/${id}/leave-balance")
+      val request = FakeRequest("POST", s"/api/employees/${id}/leave/balance")
         .withHeaders(HOST -> "localhost",
           CONTENT_TYPE -> "application/json")
         .withBody(requestBody)
@@ -170,6 +170,29 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
       val result = controller.creditLeaves(id)(request)
       whenReady(result) { r =>
         contentAsString(result) mustBe empty
+        r.header.status mustBe OK
+      }
+    }
+
+    "return OK with leave balance for a given employee" in {
+      val id = "coleson@shield.com"
+      val leaveBalance = 12.5f
+      when(employeeService.getLeaveBalance(id))
+        .thenReturn({
+          Future {
+            Right(leaveBalance)
+          }
+        })
+
+      val controller = new EmployeeController(employeeService)
+
+      val request = FakeRequest("GET", s"/api/employees/${id}/leave/balance")
+        .withHeaders(HOST -> "localhost",
+          CONTENT_TYPE -> "application/json")
+
+      val result = controller.getLeaveBalance(id)(request)
+      whenReady(result) { r =>
+        contentAsString(result).toFloat mustBe 12.5f
         r.header.status mustBe OK
       }
     }

@@ -5,7 +5,7 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
-import command.{ApplyFullDayLeaves, ApplyHalfDayLeaves, CreditLeaves, RegisterEmployee}
+import command._
 import domain.{DomainError, EmployeeActor, EventAppliedSuccessfully}
 import org.joda.time.DateTime
 
@@ -15,6 +15,7 @@ import scala.concurrent.duration._
 case class Success()
 
 case class EmployeeService @Inject()(implicit private val system: ActorSystem, ec: ExecutionContext = ExecutionContext.global) {
+
   implicit val timeout = Timeout(30 seconds)
 
   def registerEmployee(id: String, email: String, givenName: String)
@@ -51,6 +52,15 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
     result.map {
       case DomainError(message) => Left(message)
       case EventAppliedSuccessfully() => Right(Success())
+    }
+  }
+
+  def getLeaveBalance(id: String): Future[Either[String, Float]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
+    val result = actor ? GetLeaveBalance()
+    result.map {
+      case DomainError(message) => Left(message)
+      case balance: Float => Right(balance)
     }
   }
 }
