@@ -76,8 +76,8 @@ class EmployeeSpec extends PlaySpec {
     }
 
     "not be able to apply duplicate leaves" in {
-      val from = new DateTime()
-      val to = from.plusDays(6)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
       val creditedLeaves: Float = 12.5f
 
       val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
@@ -152,6 +152,18 @@ class EmployeeSpec extends PlaySpec {
         case Right(_) => fail
       }
     }
+
+//    "should be able to delete an already submitted leave application" in {
+//      val from = new DateTime()
+//      val to = from.plusDays(6)
+//      val creditedLeaves: Float = 12.5f
+//
+//      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
+//      employee.leaveApplications.length mustBe 1
+//
+//      val updatedEmployee = employee.cancelLeaveApplication(employee.leaveApplications.head.id).right.get
+//      updatedEmployee.leaveApplications mustBe empty
+//    }
   }
 }
 

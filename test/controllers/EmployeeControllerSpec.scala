@@ -1,6 +1,6 @@
 package controllers
 
-import domain.{LeaveApplication, LeaveSummary}
+import domain.{EventAppliedSuccessfully, LeaveApplication, LeaveSummary}
 import org.joda.time.DateTime
 import org.json4s.DefaultFormats
 import org.json4s.ext.JodaTimeSerializers
@@ -223,7 +223,27 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
         Json.parse(contentAsString(result)) mustBe Json.toJson(leaveSummary)
         r.header.status mustBe OK
       }
+    }
 
+    "should cancel a leave application" in {
+      val id = "vodoochild"
+      val applicationId = "vodooLeave"
+      val request = FakeRequest("DELETE", s"/api/employees/${id}/leaves/${applicationId}")
+        .withHeaders(HOST -> "localhost",
+          CONTENT_TYPE -> "application/json")
+
+      when(employeeService.cancelLeaveApplication(id, applicationId))
+        .thenReturn({
+          Future {
+            Right(Success())
+          }
+        })
+
+      val controller = new EmployeeController(employeeService)
+      val result = controller.cancelLeaveApplication(id, applicationId)(request)
+      whenReady(result) { r =>
+        r.header.status mustBe OK
+      }
     }
   }
 }

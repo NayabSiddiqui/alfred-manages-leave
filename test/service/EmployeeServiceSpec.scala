@@ -2,6 +2,7 @@ package service
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
+import domain.LeaveSummary
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -97,5 +98,17 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
       }
     }
 
+    "cancel leave application of the employee" in {
+      val id = "batman1"
+      val service = new EmployeeService()
+      val leaveSummary = service.getLeaveSummary(id).futureValue.right.getOrElse(fail)
+
+      val applicationIdToBeCancelled = leaveSummary.leaveApplications.head.id
+      val result = service.cancelLeaveApplication(id,applicationIdToBeCancelled).futureValue.right.getOrElse(fail)
+      result mustBe Success()
+
+      val summary = service.getLeaveSummary(id).futureValue.right.getOrElse(fail)
+      summary.leaveApplications.filter(application => application.id == applicationIdToBeCancelled) mustBe empty
+    }
   }
 }

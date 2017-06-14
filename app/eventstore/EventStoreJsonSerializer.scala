@@ -115,6 +115,9 @@ object EventStoreJsonSerializer {
       LeavesCredited(creditedLeaves.toFloat)
     case JObject(List(JField("applicationId", JString(applicationId)), JField("from", JString(from)), JField("to", JString(to)), JField("isHalfDay", JBool(isHalfDay)))) =>
       LeavesApplied(applicationId, DateTime.parse(from), DateTime.parse(to), isHalfDay = isHalfDay)
+    case JObject(List(JField("applicationId", JString(applicationId)))) =>
+      LeaveCancelled(applicationId)
+
   }, {
     case EmployeeRegistered(email, givenName) =>
       JObject(List(JField("email", JString(email)), JField("givenName", JString(givenName))))
@@ -122,6 +125,8 @@ object EventStoreJsonSerializer {
       JObject(List(JField("creditedLeaves", JDouble(creditedLeaves.toDouble))))
     case LeavesApplied(applicationId, from, to, isHalfDay) =>
       JObject(List(JField("applicationId", JString(applicationId)), JField("from", JString(from.toString)), JField("to", JString(to.toString)), JField("isHalfDay", JBool(isHalfDay))))
+    case LeaveCancelled(applicationId) =>
+      JObject(List(JField("applicationId", JString(applicationId))))
   }))
 
   class PersistentReprSerializer(system: ExtendedActorSystem) extends Serializer[PersistentRepr] {

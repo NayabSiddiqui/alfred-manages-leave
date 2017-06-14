@@ -63,6 +63,18 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
     }
 
+    case CancelLeaveApplication(applicationId) => {
+      val event: LeaveCancelled = LeaveCancelled(applicationId)
+      applyEvent(event) match {
+        case Left(reason) => sender ! DomainError(reason)
+        case Right(success) => {
+          persist(event) { event =>
+            sender ! success
+          }
+        }
+      }
+    }
+
     case GetLeaveBalance() => {
       sender ! employee.leaveBalance
     }
@@ -113,6 +125,15 @@ class EmployeeActor(id: String) extends PersistentActor {
               employee = updatedEmployee
               Right(EventAppliedSuccessfully())
             }
+          }
+        }
+      }
+      case LeaveCancelled(applicationId) => {
+        employee.cancelLeaveApplication(applicationId) match {
+          case Left(_) => Left("Some error occurred")
+          case Right(updatedEmployee) => {
+            employee = updatedEmployee
+            Right(EventAppliedSuccessfully())
           }
         }
       }

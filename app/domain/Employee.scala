@@ -6,6 +6,7 @@ import org.joda.time.{DateTime, DateTimeConstants, Days, DateTimeComparator}
 
 case class Employee private(id: String, email: String, givenName: String, leaveBalance: Float = 0,
                             leaveApplications: List[LeaveApplication]) {
+
   require(!id.isEmpty, "Id cannot be empty")
 
   def this(id: String) = this(id, null, null, 0f, List.empty[LeaveApplication])
@@ -46,6 +47,10 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
           leaveApplications = application :: leaveApplications))
       }
     }
+  }
+
+  def cancelLeaveApplication(id: String): Either[Nothing, Employee] = {
+    Right(copy(leaveApplications = leaveApplications.filter(application => application.id != id)))
   }
 
   private def getWorkingDayLeaves(from: DateTime, to: DateTime): List[DateTime] = {

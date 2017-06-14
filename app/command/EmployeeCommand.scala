@@ -8,5 +8,6 @@ case class RegisterEmployee(email: String, givenName: String) extends EmployeeCo
 case class CreditLeaves(creditedLeaves: Float) extends EmployeeCommand
 case class ApplyFullDayLeaves(from: DateTime, to: DateTime) extends EmployeeCommand
 case class ApplyHalfDayLeaves(from: DateTime, to: DateTime) extends EmployeeCommand
+case class CancelLeaveApplication(applicationId: String) extends EmployeeCommand
 case class GetLeaveBalance() extends EmployeeCommand
 case class GetLeaveSummary() extends EmployeeCommand

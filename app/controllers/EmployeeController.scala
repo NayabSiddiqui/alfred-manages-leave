@@ -15,7 +15,8 @@ import scala.concurrent.Future
 @Singleton
 case class EmployeeController @Inject()(private val employeeService: EmployeeService) extends Controller {
 
-//  import domain.LeaveSummary._
+
+  //  import domain.LeaveSummary._
 
   def getLeaveBalance(id: String) = Action.async { implicit request =>
     val result = employeeService.getLeaveBalance(id)
@@ -62,6 +63,14 @@ case class EmployeeController @Inject()(private val employeeService: EmployeeSer
 
     val result = employeeService.creditLeaves(id, creditedLeaves)
     result.map {
+      case Left(reason) => BadRequest(reason)
+      case Right(_) => Ok
+    }
+  }
+
+  def cancelLeaveApplication(id: String, applicationId: String) = Action.async { implicit request =>
+    val result = employeeService.cancelLeaveApplication(id, applicationId)
+    result.map{
       case Left(reason) => BadRequest(reason)
       case Right(_) => Ok
     }

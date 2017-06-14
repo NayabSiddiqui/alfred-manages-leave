@@ -173,7 +173,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       actor ! applyHalfDayLeaves
       expectMsg(EventAppliedSuccessfully())
 
-      actor ! PoisonPill
+      //      actor ! PoisonPill
 
       //TODO find a better way of testing the dates. assertion is failing
       //      val recoveredActor = system.actorOf(EmployeeActor.props(id))
@@ -240,6 +240,48 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
         case x: LeaveSummary => {
           x.leaveApplications.length mustBe 2
           x.balance mustBe 5.5f
+        }
+        case _ => fail
+      }
+    }
+
+    "handle CancelLeaveApplication command" in {
+      val id = "ironman9"
+      val email = "ironman8@marvel.com"
+      val givenName = "Tony Stark"
+      val creditedLeaves = 11.5f
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
+
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
+      actor ! ApplyFullDayLeaves(from, to)
+      expectMsg(EventAppliedSuccessfully())
+
+      val from2 = new DateTime(2017, 6, 20, 0, 0)
+      val to2 = new DateTime(2017, 6, 22, 0, 0)
+      actor ! ApplyFullDayLeaves(from2, to2)
+      expectMsg(EventAppliedSuccessfully())
+
+      val result = actor ? GetLeaveSummary()
+      var applicationId: String = ""
+      result map {
+        case x: LeaveSummary => {
+          x.leaveApplications.length mustBe 2
+          x.balance mustBe 7.5f
+          applicationId = x.leaveApplications.head.id
+        }
+        case _ => fail
+      }
+
+      actor ! CancelLeaveApplication(applicationId)
+      expectMsg(EventAppliedSuccessfully())
+
+      actor ? GetLeaveSummary() map {
+        case x: LeaveSummary => {
+          x.leaveApplications.length mustBe 1
+          x.balance mustBe 7.5f
+          x.leaveApplications.head.id must not be applicationId
+          x.leaveApplications.head.days.length mustBe 3
         }
         case _ => fail
       }

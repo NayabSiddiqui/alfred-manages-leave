@@ -56,6 +56,15 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
     }
   }
 
+  def cancelLeaveApplication(id: String, applicationId: String): Future[Either[String, Success]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
+    val result = actor ? CancelLeaveApplication(applicationId)
+    result.map {
+      case DomainError(message) => Left(message)
+      case EventAppliedSuccessfully() => Right(Success())
+    }
+  }
+
   def getLeaveBalance(id: String): Future[Either[String, Float]] = {
     val actor = system.actorOf(EmployeeActor.props(id))
     val result = actor ? GetLeaveBalance()
