@@ -9,6 +9,7 @@ GET         /                                        controllers.HomeController.
 # Employee controller
 POST        /api/employees                           @controllers.EmployeeController.registerEmployee
 
+GET         /api/employees/:id/leaves                @controllers.EmployeeController.getLeaveSummary(id: String)
 POST        /api/employees/:id/leaves                @controllers.EmployeeController.applyLeaves(id: String)
 
 GET         /api/employees/:id/leaves/balance        @controllers.EmployeeController.getLeaveBalance(id: String)

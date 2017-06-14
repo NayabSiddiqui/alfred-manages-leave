@@ -1,16 +1,25 @@
 package domain
 
-import akka.actor.{ActorSystem, PoisonPill, Status}
+import akka.actor.{ActorSystem, PoisonPill}
+import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit}
+import akka.util.Timeout
 import command._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import org.joda.time.DateTime
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{BeforeAndAfterAll, Matchers, MustMatchers, WordSpecLike}
 
 class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
   with WordSpecLike
-  with Matchers
+  with MustMatchers
   with BeforeAndAfterAll
-  with ImplicitSender {
+  with ImplicitSender
+  with ScalaFutures {
+
+  implicit val timeout = Timeout(30 seconds)
 
   override def afterAll: Unit = {
     TestKit.shutdownActorSystem(system)
@@ -118,13 +127,13 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! PoisonPill
 
-//      TODO find a better way of testing the dates. assertion is failing
-//      val recoveredActor = system.actorOf(EmployeeActor.props(id))
-//      recoveredActor ! "getEmployee"
-//      expectMsg(new Employee(id)
-//        .register(email, givenName)
-//        .creditLeaves(creditedLeaves).right.get
-//        .applyFullDayLeaves(from, to).right.get)
+      //      TODO find a better way of testing the dates. assertion is failing
+      //      val recoveredActor = system.actorOf(EmployeeActor.props(id))
+      //      recoveredActor ! "getEmployee"
+      //      expectMsg(new Employee(id)
+      //        .register(email, givenName)
+      //        .creditLeaves(creditedLeaves).right.get
+      //        .applyFullDayLeaves(from, to).right.get)
     }
 
     "reject ApplyFullDayLeaves command when leave balance is insufficient" in {
@@ -167,12 +176,12 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       actor ! PoisonPill
 
       //TODO find a better way of testing the dates. assertion is failing
-//      val recoveredActor = system.actorOf(EmployeeActor.props(id))
-//      recoveredActor ! "getEmployee"
-//      expectMsg(new Employee(id)
-//        .register(email, givenName)
-//        .creditLeaves(creditedLeaves).right.get
-//        .applyHalfDayLeaves(from, to).right.get)
+      //      val recoveredActor = system.actorOf(EmployeeActor.props(id))
+      //      recoveredActor ! "getEmployee"
+      //      expectMsg(new Employee(id)
+      //        .register(email, givenName)
+      //        .creditLeaves(creditedLeaves).right.get
+      //        .applyHalfDayLeaves(from, to).right.get)
     }
 
     "reject ApplyHalfDayLeaves command when leave balance is insufficient" in {
@@ -209,6 +218,31 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
 
       actor ! getLeaveBalance
       expectMsg(11.5f)
+    }
+
+    "handle GetLeaveSummary command" in {
+      val id = "ironman8"
+      val email = "ironman8@marvel.com"
+      val givenName = "Tony Stark"
+      val creditedLeaves = 11.5f
+      val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
+
+      val from = new DateTime()
+      val to = from.plusDays(3)
+      actor ! ApplyFullDayLeaves(from, to)
+
+      val from2 = from.plusDays(5)
+      val to2 = from.plusDays(7)
+      actor ! ApplyFullDayLeaves(from2, to2)
+
+      val result = actor ? GetLeaveSummary()
+      result map {
+        case x: LeaveSummary => {
+          x.leaveApplications.length mustBe 2
+          x.balance mustBe 5.5f
+        }
+        case _ => fail
+      }
     }
   }
 }

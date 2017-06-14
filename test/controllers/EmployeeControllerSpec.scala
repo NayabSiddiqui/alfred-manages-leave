@@ -1,7 +1,6 @@
 package controllers
 
-import java.util.Date
-
+import domain.{LeaveApplication, LeaveSummary}
 import org.joda.time.DateTime
 import org.json4s.DefaultFormats
 import org.json4s.ext.JodaTimeSerializers
@@ -12,10 +11,11 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Action, AnyContent, Results}
+import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import service.{EmployeeService, Success}
+import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -195,6 +195,35 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
         contentAsString(result).toFloat mustBe 12.5f
         r.header.status mustBe OK
       }
+    }
+
+    "should return the leave summary of a given employee" in {
+      val id = "vodoochild"
+      val request = FakeRequest("GET", s"/api/employees/${id}/leaves")
+        .withHeaders(HOST -> "localhost",
+          CONTENT_TYPE -> "application/json")
+
+      val today = new DateTime().withTimeAtStartOfDay()
+      val applications = List[LeaveApplication](
+        new LeaveApplication("myApplication1", List[DateTime](today, today plusDays 1)),
+        new LeaveApplication("myApplication2", List[DateTime](today plusDays 5, today plusDays 6, today plusDays 7))
+      )
+      val leaveSummary = new LeaveSummary(applications, 9.5f)
+
+      when(employeeService.getLeaveSummary(id))
+        .thenReturn({
+          Future {
+            Right(leaveSummary)
+          }
+        })
+
+      val controller = new EmployeeController(employeeService)
+      val result = controller.getLeaveSummary(id)(request)
+      whenReady(result) { r =>
+        Json.parse(contentAsString(result)) mustBe Json.toJson(leaveSummary)
+        r.header.status mustBe OK
+      }
+
     }
   }
 }

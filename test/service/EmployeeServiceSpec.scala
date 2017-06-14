@@ -29,7 +29,7 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
       val service = new EmployeeService()
       val futureResult = service.registerEmployee(id, email, givenName)
 
-      whenReady(futureResult){
+      whenReady(futureResult) {
         result => result.right.getOrElse(fail)
       }
     }
@@ -62,7 +62,7 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
       val service = new EmployeeService()
       val futureResult = service.getLeaveBalance(id)
 
-      whenReady(futureResult){
+      whenReady(futureResult) {
         result => {
           val balance = result.right.getOrElse(fail)
           balance mustBe 14.5f
@@ -80,8 +80,21 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
     "apply for half day leaves" in {
       val id = "batman1"
       val service = new EmployeeService()
-      val result = service.applyHalfDayLeaves(id, new DateTime(), new DateTime()).futureValue
+      val result = service.applyHalfDayLeaves(id, new DateTime() plusDays 2, new DateTime() plusDays 2).futureValue
       result.right.getOrElse(fail)
+    }
+
+    "get leave summary of the employee" in {
+      val id = "batman1"
+      val service = new EmployeeService()
+      val futureResult = service.getLeaveSummary(id)
+      whenReady(futureResult) { result => {
+        val summary = result.right.getOrElse(fail)
+        summary.leaveApplications.length mustBe 2
+        summary.balance mustBe 13f
+      }
+
+      }
     }
 
   }

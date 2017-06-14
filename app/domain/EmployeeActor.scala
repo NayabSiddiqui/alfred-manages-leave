@@ -67,6 +67,10 @@ class EmployeeActor(id: String) extends PersistentActor {
       sender ! employee.leaveBalance
     }
 
+    case GetLeaveSummary() => {
+      sender ! new LeaveSummary(employee.leaveApplications, employee.leaveBalance)
+    }
+
     //TODO only for testing purpose. Maybe find a better way to do this
     case "getEmployee" => sender ! employee
     case _ => sender ! DomainError("Unknown command. Cannot process.")

@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import command._
-import domain.{DomainError, EmployeeActor, EventAppliedSuccessfully}
+import domain.{DomainError, EmployeeActor, EventAppliedSuccessfully, LeaveSummary}
 import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,6 +15,7 @@ import scala.concurrent.duration._
 case class Success()
 
 case class EmployeeService @Inject()(implicit private val system: ActorSystem, ec: ExecutionContext = ExecutionContext.global) {
+
 
   implicit val timeout = Timeout(30 seconds)
 
@@ -61,6 +62,15 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
     result.map {
       case DomainError(message) => Left(message)
       case balance: Float => Right(balance)
+    }
+  }
+
+  def getLeaveSummary(id: String): Future[Either[String, LeaveSummary]] = {
+    val actor = system.actorOf(EmployeeActor.props(id))
+    val result = actor ? GetLeaveSummary()
+    result map {
+      case DomainError(message) => Left(message)
+      case summary: LeaveSummary => Right(summary)
     }
   }
 }

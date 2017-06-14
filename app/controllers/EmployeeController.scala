@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import akka.util.ByteString
 import org.joda.time.DateTime
 import play.api.http.HttpEntity
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import service.{EmployeeService, Success}
 
@@ -15,6 +15,8 @@ import scala.concurrent.Future
 @Singleton
 case class EmployeeController @Inject()(private val employeeService: EmployeeService) extends Controller {
 
+//  import domain.LeaveSummary._
+
   def getLeaveBalance(id: String) = Action.async { implicit request =>
     val result = employeeService.getLeaveBalance(id)
     result map {
@@ -23,6 +25,13 @@ case class EmployeeController @Inject()(private val employeeService: EmployeeSer
     }
   }
 
+  def getLeaveSummary(id: String) = Action.async { implicit request =>
+    val result = employeeService.getLeaveSummary(id)
+    result map {
+      case Left(reason) => BadRequest(reason)
+      case Right(summary) => Ok(Json.toJson(summary))
+    }
+  }
 
   def registerEmployee: Action[JsValue] = Action.async(parse.json) { implicit request =>
     val id = (request.body \ "id").as[String]
