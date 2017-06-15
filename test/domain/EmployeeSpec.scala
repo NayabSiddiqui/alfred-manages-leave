@@ -153,17 +153,17 @@ class EmployeeSpec extends PlaySpec {
       }
     }
 
-//    "should be able to delete an already submitted leave application" in {
-//      val from = new DateTime()
-//      val to = from.plusDays(6)
-//      val creditedLeaves: Float = 12.5f
-//
-//      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
-//      employee.leaveApplications.length mustBe 1
-//
-//      val updatedEmployee = employee.cancelLeaveApplication(employee.leaveApplications.head.id).right.get
-//      updatedEmployee.leaveApplications mustBe empty
-//    }
+    "should be able to delete an already submitted leave application" in {
+      val from = new DateTime()
+      val to = from.plusDays(6)
+      val creditedLeaves: Float = 12.5f
+
+      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
+      employee.leaveApplications.length mustBe 1
+
+      val updatedEmployee = employee.cancelLeaveApplication(employee.leaveApplications.head.id).right.get
+      updatedEmployee.leaveApplications mustBe empty
+    }
   }
 }
 
