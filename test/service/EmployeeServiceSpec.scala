@@ -74,14 +74,18 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
     "apply for full day leaves" in {
       val id = "batman1"
       val service = new EmployeeService()
-      val result = service.applyFullDayLeaves(id, new DateTime(), new DateTime()).futureValue
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
+      val result = service.applyFullDayLeaves(id, from, to).futureValue
       result.right.getOrElse(fail)
     }
 
     "apply for half day leaves" in {
       val id = "batman1"
       val service = new EmployeeService()
-      val result = service.applyHalfDayLeaves(id, new DateTime() plusDays 2, new DateTime() plusDays 2).futureValue
+      val from = new DateTime(2017, 6, 19, 0, 0)
+      val to = new DateTime(2017, 6, 21, 0, 0)
+      val result = service.applyHalfDayLeaves(id, from, to).futureValue
       result.right.getOrElse(fail)
     }
 
@@ -92,7 +96,7 @@ class EmployeeServiceSpec extends TestKit(ActorSystem("EmployeeServiceSpec"))
       whenReady(futureResult) { result => {
         val summary = result.right.getOrElse(fail)
         summary.leaveApplications.length mustBe 2
-        summary.balance mustBe 13f
+        summary.balance mustBe 9f
       }
 
       }

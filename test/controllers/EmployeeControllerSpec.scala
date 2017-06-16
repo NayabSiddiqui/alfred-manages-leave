@@ -205,8 +205,8 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
 
       val today = new DateTime().withTimeAtStartOfDay()
       val applications = List[LeaveApplication](
-        new LeaveApplication("myApplication1", List[DateTime](today, today plusDays 1)),
-        new LeaveApplication("myApplication2", List[DateTime](today plusDays 5, today plusDays 6, today plusDays 7))
+        new LeaveApplication("myApplication1", List[DateTime](today, today plusDays 1), true),
+        new LeaveApplication("myApplication2", List[DateTime](today plusDays 5, today plusDays 6, today plusDays 7), false)
       )
       val leaveSummary = new LeaveSummary(applications, 9.5f)
 

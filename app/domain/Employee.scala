@@ -26,7 +26,7 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
       val leaveDays = getWorkingDayLeaves(from, to)
       if (leaveDays.length > leaveBalance) Left("Insufficient leave balance")
       else {
-        val application = new LeaveApplication(leaveApplicationId, leaveDays)
+        val application = new LeaveApplication(leaveApplicationId, leaveDays, false)
         Right(copy(leaveBalance = leaveBalance - leaveDays.length,
           leaveApplications = application :: leaveApplications))
       }
@@ -42,7 +42,7 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
       val numberOfLeavesApplied = leaveDays.length * 0.5
       if (numberOfLeavesApplied > leaveBalance) Left("Insufficient leave balance")
       else {
-        val application = new LeaveApplication(leaveApplicationId, leaveDays)
+        val application = new LeaveApplication(leaveApplicationId, leaveDays, true)
         Right(copy(leaveBalance = leaveBalance - numberOfLeavesApplied.toFloat,
           leaveApplications = application :: leaveApplications))
       }

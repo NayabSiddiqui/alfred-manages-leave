@@ -14,7 +14,8 @@ object LeaveSummary {
   implicit val leaveApplicationWrites = new Writes[LeaveApplication] {
     def writes(application: LeaveApplication) = Json.obj(
       "id" -> application.id,
-      "days" -> application.days
+      "days" -> application.days,
+      "halfDayLeaves" -> application.halfDayLeaves
     )
   }
 

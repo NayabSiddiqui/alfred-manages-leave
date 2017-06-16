@@ -118,8 +118,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val creditedLeaves = 11.5f
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
       val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
 
       actor ! applyFullDayLeaves
@@ -143,8 +143,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val creditedLeaves = 2.5f
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
       val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
 
       actor ! applyFullDayLeaves
@@ -166,8 +166,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val creditedLeaves = 11.5f
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
       val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
 
       actor ! applyHalfDayLeaves
@@ -191,8 +191,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val creditedLeaves = 1.0f
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 15, 0, 0)
       val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
 
       actor ! applyHalfDayLeaves
@@ -227,8 +227,8 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val creditedLeaves = 11.5f
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
-      val from = new DateTime()
-      val to = from.plusDays(3)
+      val from = new DateTime(2017, 6, 11, 0, 0)
+      val to = new DateTime(2017, 6, 13, 0, 0)
       actor ! ApplyFullDayLeaves(from, to)
 
       val from2 = from.plusDays(5)
