@@ -18,31 +18,29 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
     else Right(copy(leaveBalance = leaveBalance + creditedLeaves))
   }
 
-  def applyFullDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, from: DateTime, to: DateTime): Either[String, Employee] = {
-    if (leaveAlreadyAppliedForGivenDates(from, to)) {
+  def applyFullDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, days: List[DateTime] ): Either[String, Employee] = {
+    if (isLeaveAlreadyAppliedForGivenDates(days)) {
       Left("Leaves for one or more dates have already been applied.")
     }
     else {
-      val leaveDays = getWorkingDayLeaves(from, to)
-      if (leaveDays.length > leaveBalance) Left("Insufficient leave balance")
+      if (days.length > leaveBalance) Left("Insufficient leave balance")
       else {
-        val application = new LeaveApplication(leaveApplicationId, leaveDays, false)
-        Right(copy(leaveBalance = leaveBalance - leaveDays.length,
+        val application = new LeaveApplication(leaveApplicationId, days, false)
+        Right(copy(leaveBalance = leaveBalance - days.length,
           leaveApplications = application :: leaveApplications))
       }
     }
   }
 
-  def applyHalfDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, from: DateTime, to: DateTime): Either[String, Employee] = {
-    if (leaveAlreadyAppliedForGivenDates(from, to)) {
+  def applyHalfDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, days: List[DateTime]): Either[String, Employee] = {
+    if (isLeaveAlreadyAppliedForGivenDates(days)) {
       Left("Leaves for one or more dates have already been applied.")
     }
     else {
-      val leaveDays = getWorkingDayLeaves(from, to)
-      val numberOfLeavesApplied = leaveDays.length * 0.5
+      val numberOfLeavesApplied = days.length * 0.5
       if (numberOfLeavesApplied > leaveBalance) Left("Insufficient leave balance")
       else {
-        val application = new LeaveApplication(leaveApplicationId, leaveDays, true)
+        val application = new LeaveApplication(leaveApplicationId, days, true)
         Right(copy(leaveBalance = leaveBalance - numberOfLeavesApplied.toFloat,
           leaveApplications = application :: leaveApplications))
       }
@@ -53,18 +51,9 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
     Right(copy(leaveApplications = leaveApplications.filter(application => application.id != id)))
   }
 
-  private def getWorkingDayLeaves(from: DateTime, to: DateTime): List[DateTime] = {
-    val totalNumberOfDays = Days.daysBetween(from, to).getDays
-    val allDates = for (day <- 0 to totalNumberOfDays) yield from.plusDays(day).withTimeAtStartOfDay()
-    allDates.filter(date =>
-      date.getDayOfWeek != DateTimeConstants.SATURDAY && date.getDayOfWeek != DateTimeConstants.SUNDAY)
-      .toList
-  }
-
-  private def leaveAlreadyAppliedForGivenDates(from: DateTime, to: DateTime): Boolean = {
+  private def isLeaveAlreadyAppliedForGivenDates(days: List[DateTime]): Boolean = {
     val allAppliedLeaves = leaveApplications.flatMap(application => application.days)
-    val appliedLeaveDays = getWorkingDayLeaves(from, to)
-    allAppliedLeaves.intersect(appliedLeaveDays).nonEmpty
+    allAppliedLeaves.intersect(days).nonEmpty
   }
 }
 

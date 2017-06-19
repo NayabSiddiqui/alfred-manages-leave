@@ -87,10 +87,11 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       actor ! CreditLeaves(11.5f)
       expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
 
-      actor ! ApplyFullDayLeaves(new DateTime(), new DateTime().plusDays(3))
+      val today = new DateTime()
+      actor ! ApplyFullDayLeaves(List[DateTime](today, today plusDays 1))
       expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
 
-      actor ! ApplyHalfDayLeaves(new DateTime(), new DateTime().plusDays(3))
+      actor ! ApplyHalfDayLeaves(List[DateTime](today, today plusDays 1))
       expectMsg(DomainError(s"Employee with id $id is not registered. Cannot handle commands for unregistered Employee"))
     }
 
@@ -119,8 +120,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
-      val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
+      val applyFullDayLeaves = ApplyFullDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3))
 
       actor ! applyFullDayLeaves
       expectMsg(EventAppliedSuccessfully())
@@ -144,8 +144,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
-      val applyFullDayLeaves = ApplyFullDayLeaves(from, to)
+      val applyFullDayLeaves = ApplyFullDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3))
 
       actor ! applyFullDayLeaves
       expectMsg(DomainError("Insufficient leave balance"))
@@ -167,8 +166,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
-      val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
+      val applyHalfDayLeaves = ApplyHalfDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3))
 
       actor ! applyHalfDayLeaves
       expectMsg(EventAppliedSuccessfully())
@@ -192,8 +190,7 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
-      val applyHalfDayLeaves = ApplyHalfDayLeaves(from, to)
+      val applyHalfDayLeaves = ApplyHalfDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3))
 
       actor ! applyHalfDayLeaves
       expectMsg(DomainError("Insufficient leave balance"))
@@ -228,12 +225,10 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 13, 0, 0)
-      actor ! ApplyFullDayLeaves(from, to)
+      actor ! ApplyFullDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2))
 
       val from2 = from.plusDays(5)
-      val to2 = from.plusDays(7)
-      actor ! ApplyFullDayLeaves(from2, to2)
+      actor ! ApplyFullDayLeaves(List[DateTime](from2, from2 plusDays 1, from2 plusDays 2))
 
       val result = actor ? GetLeaveSummary()
       result map {
@@ -253,13 +248,11 @@ class EmployeeActorSpec extends TestKit(ActorSystem("EmployeeActorSpec"))
       val actor = givenActorWithCreditedLeaves(id, email, givenName, creditedLeaves)
 
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
-      actor ! ApplyFullDayLeaves(from, to)
+      actor ! ApplyFullDayLeaves(List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3))
       expectMsg(EventAppliedSuccessfully())
 
       val from2 = new DateTime(2017, 6, 20, 0, 0)
-      val to2 = new DateTime(2017, 6, 22, 0, 0)
-      actor ! ApplyFullDayLeaves(from2, to2)
+      actor ! ApplyFullDayLeaves(List[DateTime](from2, from2 plusDays 1, from2 plusDays 2))
       expectMsg(EventAppliedSuccessfully())
 
       val result = actor ? GetLeaveSummary()

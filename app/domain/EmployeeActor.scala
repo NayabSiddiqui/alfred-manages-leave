@@ -40,8 +40,8 @@ class EmployeeActor(id: String) extends PersistentActor {
       }
       }
     }
-    case ApplyFullDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, from.withTimeAtStartOfDay, to.withTimeAtStartOfDay, isHalfDay = false)
+    case ApplyFullDayLeaves(days) => {
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, days, false)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -51,8 +51,8 @@ class EmployeeActor(id: String) extends PersistentActor {
         }
       }
     }
-    case ApplyHalfDayLeaves(from, to) => {
-      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, from.withTimeAtStartOfDay, to.withTimeAtStartOfDay, isHalfDay = true)
+    case ApplyHalfDayLeaves(days) => {
+      val event: LeavesApplied = LeavesApplied(UUID.randomUUID().toString, days, true)
       applyEvent(event) match {
         case Left(reason) => sender ! DomainError(reason)
         case Right(success) => {
@@ -110,16 +110,16 @@ class EmployeeActor(id: String) extends PersistentActor {
           }
         }
       }
-      case LeavesApplied(applicationId, from, to, isHalfDay) => {
+      case LeavesApplied(applicationId, days, isHalfDay) => {
         isHalfDay match {
-          case false => employee.applyFullDayLeaves(applicationId, from, to) match {
+          case false => employee.applyFullDayLeaves(applicationId, days) match {
             case Left(reason) => Left(reason)
             case Right(updatedEmployee) => {
               employee = updatedEmployee
               Right(EventAppliedSuccessfully())
             }
           }
-          case true => employee.applyHalfDayLeaves(applicationId, from, to) match {
+          case true => employee.applyHalfDayLeaves(applicationId, days) match {
             case Left(reason) => Left(reason)
             case Right(updatedEmployee) => {
               employee = updatedEmployee

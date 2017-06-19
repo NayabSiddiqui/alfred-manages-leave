@@ -14,7 +14,9 @@ import scala.concurrent.duration._
 
 case class Success()
 
-case class EmployeeService @Inject()(implicit private val system: ActorSystem, ec: ExecutionContext = ExecutionContext.global) {
+case class EmployeeService @Inject()(private val teamCalendarService: TeamCalendarService)(
+  implicit private val system: ActorSystem,
+  ec: ExecutionContext = ExecutionContext.global) {
 
 
   implicit val timeout = Timeout(30 seconds)
@@ -40,7 +42,7 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
 
   def applyFullDayLeaves(id: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
     val actor = system.actorOf(EmployeeActor.props(id))
-    val result: Future[Any] = actor ? ApplyFullDayLeaves(from, to)
+    val result: Future[Any] = actor ? ApplyFullDayLeaves(teamCalendarService.getWorkingDaysBetween(from, to))
     result.map {
       case DomainError(message) => Left(message)
       case EventAppliedSuccessfully() => Right(Success())
@@ -49,7 +51,7 @@ case class EmployeeService @Inject()(implicit private val system: ActorSystem, e
 
   def applyHalfDayLeaves(id: String, from: DateTime, to: DateTime): Future[Either[String, Success]] = {
     val actor = system.actorOf(EmployeeActor.props(id))
-    val result: Future[Any] = actor ? ApplyHalfDayLeaves(from, to)
+    val result: Future[Any] = actor ? ApplyHalfDayLeaves(teamCalendarService.getWorkingDaysBetween(from, to))
     result.map {
       case DomainError(message) => Left(message)
       case EventAppliedSuccessfully() => Right(Success())

@@ -11,13 +11,11 @@ import akka.persistence.{PersistentRepr, SnapshotMetadata}
 import event._
 import org.joda.time.DateTime
 import org.json4s.Extraction.decompose
-import org.json4s.JsonAST.{JField, JString}
+import org.json4s.JsonAST.{JField, JString, JValue}
 import org.json4s._
 import org.json4s.ext.JodaTimeSerializers
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
-
-import scala.collection.generic.SeqFactory
 
 class EventStoreJsonSerializer(val system: ExtendedActorSystem) extends EventStoreSerializer {
 
@@ -113,8 +111,13 @@ object EventStoreJsonSerializer {
       EmployeeRegistered(email, givenName)
     case JObject(List(JField("creditedLeaves", JDouble(creditedLeaves)))) =>
       LeavesCredited(creditedLeaves.toFloat)
-    case JObject(List(JField("applicationId", JString(applicationId)), JField("from", JString(from)), JField("to", JString(to)), JField("isHalfDay", JBool(isHalfDay)))) =>
-      LeavesApplied(applicationId, DateTime.parse(from), DateTime.parse(to), isHalfDay = isHalfDay)
+    case JObject(List(JField("applicationId", JString(applicationId)), JField("days", JArray(days)), JField("isHalfDay", JBool(isHalfDay)))) => {
+      val leaveDays = days.map {
+        case JString(x) => DateTime.parse(x)
+        case _ => sys.error(s"Expected type JString")
+      }
+      LeavesApplied(applicationId, leaveDays, isHalfDay)
+    }
     case JObject(List(JField("applicationId", JString(applicationId)))) =>
       LeaveCancelled(applicationId)
 
@@ -123,8 +126,8 @@ object EventStoreJsonSerializer {
       JObject(List(JField("email", JString(email)), JField("givenName", JString(givenName))))
     case LeavesCredited(creditedLeaves) =>
       JObject(List(JField("creditedLeaves", JDouble(creditedLeaves.toDouble))))
-    case LeavesApplied(applicationId, from, to, isHalfDay) =>
-      JObject(List(JField("applicationId", JString(applicationId)), JField("from", JString(from.toString)), JField("to", JString(to.toString)), JField("isHalfDay", JBool(isHalfDay))))
+    case LeavesApplied(applicationId, days, isHalfDay) =>
+      JObject(List(JField("applicationId", JString(applicationId)), JField("days", JArray(days.map(d => JString(d.toString)))), JField("isHalfDay", JBool(isHalfDay))))
     case LeaveCancelled(applicationId) =>
       JObject(List(JField("applicationId", JString(applicationId))))
   }))

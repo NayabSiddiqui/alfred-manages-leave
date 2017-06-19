@@ -21,9 +21,9 @@ class EmployeeSpec extends PlaySpec {
     employee.creditLeaves(creditedLeaves).right.get
   }
 
-  def givenEmployeeWithAppliedLeaves(creditedLeaves: Float, from: DateTime, to: DateTime) = {
+  def givenEmployeeWithAppliedLeaves(creditedLeaves: Float, leaveDays: List[DateTime]) = {
     val employee = givenEmployeeWithCreditedLeaves(creditedLeaves)
-    employee.applyFullDayLeaves(UUID.randomUUID().toString, from, to).right.get
+    employee.applyFullDayLeaves(UUID.randomUUID().toString, leaveDays).right.get
   }
 
   "Employee" should {
@@ -60,9 +60,9 @@ class EmployeeSpec extends PlaySpec {
       val employee = givenEmployeeWithCreditedLeaves(12.5f)
 
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3)
 
-      employee.applyFullDayLeaves("myApplication", from, to) match {
+      employee.applyFullDayLeaves("myApplication", leaveDays) match {
         case Left(_) => fail
         case Right(updatedEmployee) => {
           updatedEmployee.leaveBalance mustBe 8.5f
@@ -71,42 +71,22 @@ class EmployeeSpec extends PlaySpec {
           val application = leaveApplications.head
           application.id mustBe "myApplication"
           application.days.length mustBe 4
+          application.days mustBe leaveDays
         }
       }
     }
 
     "not be able to apply duplicate leaves" in {
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3)
       val creditedLeaves: Float = 12.5f
 
-      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
+      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, leaveDays)
 
-      val newLeavesFrom = from.plusDays(2).plusHours(4)
-      val newLeavesTill = from.plusDays(3)
-
-
-      employee.applyFullDayLeaves(UUID.randomUUID().toString, newLeavesFrom, newLeavesTill) match {
+      employee.applyFullDayLeaves(UUID.randomUUID().toString,
+        List[DateTime](from plusDays 3, from plusDays 4)) match {
         case Left(reason) => reason mustBe "Leaves for one or more dates have already been applied."
         case Right(_) => fail
-      }
-    }
-
-    "be able to apply full day leaves excluding weekends" in {
-      val employee = givenEmployeeWithCreditedLeaves(12.5f)
-
-      val from = new DateTime(2017, 6, 11, 0, 0)
-      val to = new DateTime(2017, 6, 20, 0, 0)
-
-      employee.applyFullDayLeaves(from = from, to = to) match {
-        case Left(_) => fail
-        case Right(updatedEmployee) => {
-          updatedEmployee.leaveBalance mustBe 5.5f
-          val leaveApplications = updatedEmployee.leaveApplications
-          leaveApplications.length mustBe 1
-          val application = leaveApplications.head
-          application.days.length mustBe 7
-        }
       }
     }
 
@@ -114,9 +94,9 @@ class EmployeeSpec extends PlaySpec {
       val employee = givenEmployeeWithCreditedLeaves(2.5f)
 
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3)
 
-      employee.applyFullDayLeaves(from = from, to = to) match {
+      employee.applyFullDayLeaves(UUID.randomUUID().toString,leaveDays) match {
         case Left(reason) => reason mustBe "Insufficient leave balance"
         case Right(_) => fail
       }
@@ -126,9 +106,9 @@ class EmployeeSpec extends PlaySpec {
       val employee = givenEmployeeWithCreditedLeaves(2.5f)
 
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 14, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2)
 
-      employee.applyHalfDayLeaves("myLeaveApplication", from = from, to = to) match {
+      employee.applyHalfDayLeaves("myLeaveApplication", leaveDays) match {
         case Left(_) => fail
         case Right(updatedEmployee) => {
           updatedEmployee.leaveBalance mustBe 1f
@@ -145,20 +125,20 @@ class EmployeeSpec extends PlaySpec {
       val employee = givenEmployeeWithCreditedLeaves(1f)
 
       val from = new DateTime(2017, 6, 12, 0, 0)
-      val to = new DateTime(2017, 6, 15, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2)
 
-      employee.applyHalfDayLeaves(from = from, to = to) match {
+      employee.applyHalfDayLeaves("myLeaveApplication", leaveDays) match {
         case Left(reason) => reason mustBe "Insufficient leave balance"
         case Right(_) => fail
       }
     }
 
     "should be able to delete an already submitted leave application" in {
-      val from = new DateTime()
-      val to = from.plusDays(6)
+      val from = new DateTime(2017, 6, 12, 0, 0)
+      val leaveDays = List[DateTime](from, from plusDays 1, from plusDays 2, from plusDays 3)
       val creditedLeaves: Float = 12.5f
 
-      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, from, to)
+      val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, leaveDays)
       employee.leaveApplications.length mustBe 1
 
       val updatedEmployee = employee.cancelLeaveApplication(employee.leaveApplications.head.id).right.get
