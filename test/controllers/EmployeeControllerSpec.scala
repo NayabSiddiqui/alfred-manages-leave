@@ -184,6 +184,10 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
           }
         })
 
+      val leaveBalanceJson = JsObject(Seq(
+        "balance" -> JsString(leaveBalance.toString)
+      ))
+
       val controller = new EmployeeController(employeeService)
 
       val request = FakeRequest("GET", s"/api/employees/${id}/leave/balance")
@@ -192,7 +196,7 @@ class EmployeeControllerSpec extends PlaySpec with Results with MockitoSugar wit
 
       val result = controller.getLeaveBalance(id)(request)
       whenReady(result) { r =>
-        contentAsString(result).toFloat mustBe 12.5f
+        Json.parse(contentAsString(result)) mustBe leaveBalanceJson
         r.header.status mustBe OK
       }
     }

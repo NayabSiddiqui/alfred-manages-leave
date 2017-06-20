@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import akka.util.ByteString
 import org.joda.time.DateTime
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc._
 import service.{EmployeeService, Success}
 
@@ -22,7 +22,12 @@ case class EmployeeController @Inject()(private val employeeService: EmployeeSer
     val result = employeeService.getLeaveBalance(id)
     result map {
       case Left(reason) => BadRequest(reason)
-      case Right(leaveBalance) => Ok(leaveBalance.toString)
+      case Right(leaveBalance) => {
+        val response = JsObject(Seq(
+          "balance" -> JsString(leaveBalance.toString)
+        ))
+        Ok(response)
+      }
     }
   }
 

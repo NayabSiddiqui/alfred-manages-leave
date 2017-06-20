@@ -6,7 +6,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.Results
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -34,11 +34,15 @@ class TeamCalendarControllerSpec extends PlaySpec with Results with MockitoSugar
           CONTENT_TYPE -> "application/json")
         .withBody(requestBody)
 
+      val leaveDaysJson = JsObject(Seq(
+        "numberOfLeaveDays" -> JsString("3")
+      ))
+
       val controller = new TeamCalendarController(teamCalendarService)
 
       val result = controller.getPreviewOfLeaveApplication()(request)
       whenReady(result) { r =>
-        contentAsString(result).toInt mustBe 3
+        Json.parse(contentAsString(result)) mustBe leaveDaysJson
         r.header.status mustBe OK
       }
     }
