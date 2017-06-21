@@ -140,9 +140,11 @@ class EmployeeSpec extends PlaySpec {
 
       val employee = givenEmployeeWithAppliedLeaves(creditedLeaves, leaveDays)
       employee.leaveApplications.length mustBe 1
+      employee.leaveBalance mustBe 8.5f
 
       val updatedEmployee = employee.cancelLeaveApplication(employee.leaveApplications.head.id).right.get
       updatedEmployee.leaveApplications mustBe empty
+      updatedEmployee.leaveBalance mustBe 12.5f
     }
   }
 }

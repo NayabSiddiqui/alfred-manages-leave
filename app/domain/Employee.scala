@@ -18,7 +18,7 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
     else Right(copy(leaveBalance = leaveBalance + creditedLeaves))
   }
 
-  def applyFullDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, days: List[DateTime] ): Either[String, Employee] = {
+  def applyFullDayLeaves(leaveApplicationId: String = UUID.randomUUID().toString, days: List[DateTime]): Either[String, Employee] = {
     if (isLeaveAlreadyAppliedForGivenDates(days)) {
       Left("Leaves for one or more dates have already been applied.")
     }
@@ -48,7 +48,11 @@ case class Employee private(id: String, email: String, givenName: String, leaveB
   }
 
   def cancelLeaveApplication(id: String): Either[Nothing, Employee] = {
-    Right(copy(leaveApplications = leaveApplications.filter(application => application.id != id)))
+    val leaveApplicationToBeDeleted = leaveApplications.filter(application => application.id == id).head
+    val numberOfDaysToBeCredited = leaveApplicationToBeDeleted.days.length * (if (leaveApplicationToBeDeleted.halfDayLeaves) 0.5f else 1)
+    Right(copy(leaveBalance = leaveBalance + numberOfDaysToBeCredited,
+      leaveApplications = leaveApplications.filter(application => application.id != id)
+    ))
   }
 
   private def isLeaveAlreadyAppliedForGivenDates(days: List[DateTime]): Boolean = {
